@@ -26,7 +26,7 @@ const Modal = ({ isOpen, onClose, onConfirm, lessonName }) => {
 const LessonList = () => {
   const [grade, setGrade] = useState('');
   const [subject, setSubject] = useState('');
-  const [lessons, setLessons] = useState([]);
+  const [lessons, setLessons] = useState([]); 
   const [subjects, setSubjects] = useState([]); 
   const [editingLesson, setEditingLesson] = useState(null);
   const [subjectImageFile, setSubjectImageFile] = useState(null);
@@ -47,20 +47,20 @@ const LessonList = () => {
 
   const fetchLessons = useCallback(async () => {
     if (grade && subject) {
-        const docRef = doc(collection(db, grade), subject);
-        const docSnap = await getDoc(docRef);
-        
-        if (docSnap.exists()) {
-            const data = docSnap.data(); 
-            const lessonList = data.lessonList || [];
-            setLessons(lessonList);
-            setSubjectImageUrl(data.subjectImage); 
-            console.log('Fetched document data:', data);
-        } else {
-            console.log('No document found for this grade and subject');
-            setLessons([]);
-            setSubjectImageUrl(''); 
-        }
+      const docRef = doc(collection(db, grade), subject);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data(); 
+        const lessonList = data.lessonList || [];
+        setLessons(lessonList); 
+        setSubjectImageUrl(data.subjectImage); 
+        console.log('Fetched document data:', data);
+      } else {
+        console.log('No document found for this grade and subject');
+        setLessons([]); 
+        setSubjectImageUrl(''); 
+      }
     }
   }, [grade, subject]);
 
@@ -76,7 +76,7 @@ const LessonList = () => {
 
   const handleEdit = (lesson) => {
     setEditingLesson(lesson);
-    setLessonName(lesson.lessonName);
+    setLessonName(lesson); 
     setSubjectImageFile(null);
   };
 
@@ -93,7 +93,7 @@ const LessonList = () => {
       const docRef = doc(collection(db, grade), subject);
 
       await updateDoc(docRef, {
-        lessonList: updatedLessons
+        lessonList: updatedLessons 
       });
 
       setLessons(updatedLessons);
@@ -108,30 +108,30 @@ const LessonList = () => {
     if (!editingLesson) return;
 
     try {
-      let updatedLesson = { ...editingLesson, lessonName }; 
+      let updatedLessons = [...lessons];
       
       // Handle subject image upload
+      let subjectImageUrl = editingLesson.subjectImage; // Keep current image if not updating
       if (subjectImageFile) {
         const subjectImageRef = ref(storage, `subjects/${subjectImageFile.name}`);
         const snapshot = await uploadBytes(subjectImageRef, subjectImageFile);
-        const subjectImageUrl = await getDownloadURL(snapshot.ref);
+        subjectImageUrl = await getDownloadURL(snapshot.ref);
         console.log('Uploaded subject image URL:', subjectImageUrl);
-        updatedLesson.subjectImage = subjectImageUrl;
-      } else {
-        updatedLesson.subjectImage = editingLesson.subjectImage; 
       }
 
-      const docRef = doc(collection(db, grade), subject);
-      const lessonList = lessons.map(lesson => lesson.lessonName === editingLesson.lessonName ? updatedLesson : lesson);
+      // Update the lesson name in the array
+      updatedLessons = updatedLessons.map(lesson => lesson === editingLesson ? lessonName : lesson);
 
+      const docRef = doc(collection(db, grade), subject);
       await updateDoc(docRef, {
-        lessonList
+        lessonList: updatedLessons 
       });
 
-      setLessons(lessonList);
+      setLessons(updatedLessons);
       setEditingLesson(null);
       setSubjectImageFile(null);
       setLessonName('');
+      setSubjectImageUrl(subjectImageUrl); 
     } catch (error) {
       console.error('Error updating lesson: ', error);
     }
@@ -169,7 +169,7 @@ const LessonList = () => {
             onChange={(e) => setSubject(e.target.value)}
             value={subject}
             className="mt-1 p-2 block w-full border border-gray-300 rounded"
-            disabled={!grades.length}
+            disabled={!subjects.length}
           >
             <option value="">Select Subject</option>
             {subjects.map((subject) => (
@@ -193,8 +193,8 @@ const LessonList = () => {
               {lessons.map((lesson, index) => (
                 <li key={index} className="border-b py-2 flex items-center justify-between">
                   <div className="flex items-center">
-                    <span className="font-semibold">Lesson Name:</span> 
-                    <span className="ml-2 font-bold text-red-500">{lesson.lessonName}</span> 
+                    <span className="font-medium">Lesson Name:</span> 
+                    <span className="ml-4 font-bold text-red-500">{lesson}</span> 
                   </div>
                   <div>
                     <button onClick={() => handleEdit(lesson)} className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 mr-2">
@@ -229,9 +229,9 @@ const LessonList = () => {
             </div>
             <div>
               <label htmlFor="subjectImage" className="block text-sm font-medium">Subject Image</label>
-              {editingLesson.subjectImage && (
+              {editingLesson && (
                 <div className="mt-2">
-                  <img src={editingLesson.subjectImage} alt="Current Subject" className="max-w-12 h-12 rounded shadow mb-2" />
+                  <img src={subjectImageUrl} alt="Current Subject" className="max-w-12 h-12 rounded shadow mb-2" />
                 </div>
               )}
               <input
@@ -260,7 +260,7 @@ const LessonList = () => {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onConfirm={confirmDelete}
-          lessonName={lessonToDelete ? lessonToDelete.lessonName : ''}
+          lessonName={lessonToDelete || ''}
         />
       </section>
     </section>

@@ -51,15 +51,13 @@ const AddLessons = () => {
           subjectImageUrl = docSnap.data().subjectImage;
         }
 
-        // Add new lesson to the lessonList
-        existingLessonList.push({
-          lessonName: values.lessonName,
-        });
+        // Add new lesson directly as a string in the lessonList
+        existingLessonList.push(values.lessonName); 
 
         // Create or update the document with the updated lessonList
         await setDoc(docRef, {
-          lessonList: existingLessonList,
-          subjectName: values.subject,
+          lessonList: existingLessonList, 
+          subjectName: values.subject, 
           subjectImage: subjectImageUrl, 
         }, { merge: true }); 
 
