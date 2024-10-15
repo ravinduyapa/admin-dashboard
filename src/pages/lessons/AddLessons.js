@@ -1,68 +1,77 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Sidebar from '../../components/Sidebar';
-import { collection, addDoc } from 'firebase/firestore'; 
-import { db } from '../../auth/Firebase';
+import { collection, doc, getDoc, setDoc } from 'firebase/firestore'; 
+import { db, storage } from '../../auth/Firebase'; 
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const AddLessons = () => {
+  const [subjectImageFile, setSubjectImageFile] = useState(null); 
+
   const formik = useFormik({
     initialValues: {
       grade: '',
       subject: '',
       lessonName: '',
-      description: '',
-      link: '',
     },
     validationSchema: Yup.object({
       grade: Yup.string().required('Grade is required'),
       subject: Yup.string().required('Subject is required'),
       lessonName: Yup.string().max(100, 'Must be 100 characters or less').required('Lesson name is required'),
-      description: Yup.string(),
-      link: Yup.string().url('Invalid URL'),
     }),
     onSubmit: async (values, { resetForm }) => {
       try {
-        // Add a new document to the "lessons" collection
-        await addDoc(collection(db, 'lessons'), {
-          grade: values.grade,
-          subject: values.subject,
+        let subjectImageUrl = ''; 
+
+        // Define the document reference using grade and subject
+        const docRef = doc(collection(db, values.grade), values.subject);
+
+        // Get existing document
+        const docSnap = await getDoc(docRef);
+        let existingLessonList = [];
+        let subjectImageExists = false;
+
+        if (docSnap.exists()) {
+          // If document exists, retrieve the existing lessonList
+          existingLessonList = docSnap.data().lessonList || [];
+          
+          // Check if subjectImage already exists for this subject
+          subjectImageExists = docSnap.data().subjectImage ? true : false;
+        }
+
+        // Handle subject image upload if there's a file and no existing image
+        if (subjectImageFile && !subjectImageExists) {
+          const subjectImageRef = ref(storage, `subjects/${subjectImageFile.name}`);
+          const snapshot = await uploadBytes(subjectImageRef, subjectImageFile);
+          subjectImageUrl = await getDownloadURL(snapshot.ref);
+        } else if (subjectImageExists) {
+          subjectImageUrl = docSnap.data().subjectImage;
+        }
+
+        // Add new lesson to the lessonList
+        existingLessonList.push({
           lessonName: values.lessonName,
-          description: values.description,
-          link: values.link,
         });
+
+        // Create or update the document with the updated lessonList
+        await setDoc(docRef, {
+          lessonList: existingLessonList,
+          subjectName: values.subject,
+          subjectImage: subjectImageUrl, 
+        }, { merge: true }); 
+
         toast.success('Lesson added successfully!');
         resetForm();
+        setSubjectImageFile(null); 
       } catch (error) {
         console.error('Error adding document: ', error);
         toast.error('Failed to add lesson. Please try again.');
       }
     },
   });
-
-  const subjects = [
-    'Sinhala',
-    'English',
-    'Maths',
-    'Science',
-    'Buddhism',
-    'History',
-    'Tamil',
-    'ICT',
-    'Civic',
-    'Health',
-    'Geography',
-    'Art',
-    'Dancing',
-    'Drama',
-    'Western Music',
-    'Eastern Music',
-    'English Literature',
-    'Sinhala Literature',
-    'Media',
-  ];
 
   const grades = Array.from({ length: 13 }, (_, i) => `Grade ${i + 1}`);
 
@@ -93,25 +102,36 @@ const AddLessons = () => {
             ) : null}
           </div>
 
-          {/* Select Subject */}
+          {/* Subject Input (Text Field) */}
           <div>
             <label htmlFor="subject" className="block text-sm font-medium">Subject</label>
-            <select
+            <input
               id="subject"
               name="subject"
+              type="text"
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               value={formik.values.subject}
               className="mt-1 p-2 block w-full border border-gray-300 rounded"
-            >
-              <option value="">Select Subject</option>
-              {subjects.map((subject) => (
-                <option key={subject} value={subject}>{subject}</option>
-              ))}
-            </select>
+            />
             {formik.touched.subject && formik.errors.subject ? (
               <div className="text-red-600 text-sm">{formik.errors.subject}</div>
             ) : null}
+          </div>
+
+          {/* Subject Image Upload */}
+          <div>
+            <label htmlFor="subjectImage" className="block text-sm font-medium">Subject Image</label>
+            <input
+              id="subjectImage"
+              name="subjectImage"
+              type="file"
+              accept="image/*"
+              onChange={(event) => {
+                setSubjectImageFile(event.currentTarget.files[0]); 
+              }}
+              className="mt-1 p-2 block w-full border border-gray-300 rounded"
+            />
           </div>
 
           {/* Lesson Name */}
@@ -131,39 +151,6 @@ const AddLessons = () => {
             ) : null}
           </div>
 
-          {/* Description */}
-          <div>
-            <label htmlFor="description" className="block text-sm font-medium">Description</label>
-            <textarea
-              id="description"
-              name="description"
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              value={formik.values.description}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded"
-            />
-            {formik.touched.description && formik.errors.description ? (
-              <div className="text-red-600 text-sm">{formik.errors.description}</div>
-            ) : null}
-          </div>
-
-          {/* Link */}
-          <div>
-            <label htmlFor="link" className="block text-sm font-medium">Link</label>
-            <input
-              id="link"
-              name="link"
-              type="text"
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              value={formik.values.link}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded"
-            />
-            {formik.touched.link && formik.errors.link ? (
-              <div className="text-red-600 text-sm">{formik.errors.link}</div>
-            ) : null}
-          </div>
-
           {/* Submit Button */}
           <button
             type="submit"
@@ -178,4 +165,4 @@ const AddLessons = () => {
   );
 };
 
-export default AddLessons;  
+export default AddLessons;
