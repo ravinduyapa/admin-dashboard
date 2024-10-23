@@ -1,15 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Sidebar from '../../components/Sidebar';
-import { collection, doc, getDoc, setDoc } from 'firebase/firestore'; 
+import { collection, doc, getDoc, setDoc, query, where, getDocs } from 'firebase/firestore'; 
 import { db, storage } from '../../auth/Firebase'; 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const AddLessons = () => {
-  const [subjectImageFile, setSubjectImageFile] = useState(null); 
+  const [subjectImageFile, setSubjectImageFile] = useState(null);
+  const [subjects, setSubjects] = useState([]); 
+
+  // Fetch subjects based on the selected grade
+  const fetchSubjects = async (grade) => {
+    try {
+      const q = query(collection(db, 'subjects'), where('grade', '==', grade));
+      const querySnapshot = await getDocs(q);
+
+      const subjectsList = [];
+      querySnapshot.forEach((doc) => {
+        subjectsList.push(doc.data().subjectName); 
+      });
+
+      setSubjects(subjectsList);
+    } catch (error) {
+      console.error('Error fetching subjects: ', error);
+    }
+  };
 
   const formik = useFormik({
     initialValues: {
@@ -24,25 +42,18 @@ const AddLessons = () => {
     }),
     onSubmit: async (values, { resetForm }) => {
       try {
-        let subjectImageUrl = ''; 
+        let subjectImageUrl = '';
 
-        // Define the document reference using grade and subject
         const docRef = doc(collection(db, values.grade), values.subject);
-
-        // Get existing document
         const docSnap = await getDoc(docRef);
         let existingLessonList = [];
         let subjectImageExists = false;
 
         if (docSnap.exists()) {
-          // If document exists, retrieve the existing lessonList
           existingLessonList = docSnap.data().lessonList || [];
-          
-          // Check if subjectImage already exists for this subject
           subjectImageExists = docSnap.data().subjectImage ? true : false;
         }
 
-        // Handle subject image upload if there's a file and no existing image
         if (subjectImageFile && !subjectImageExists) {
           const subjectImageRef = ref(storage, `subjects/${subjectImageFile.name}`);
           const snapshot = await uploadBytes(subjectImageRef, subjectImageFile);
@@ -51,19 +62,17 @@ const AddLessons = () => {
           subjectImageUrl = docSnap.data().subjectImage;
         }
 
-        // Add new lesson directly as a string in the lessonList
-        existingLessonList.push(values.lessonName); 
+        existingLessonList.push(values.lessonName);
 
-        // Create or update the document with the updated lessonList
         await setDoc(docRef, {
-          lessonList: existingLessonList, 
-          subjectName: values.subject, 
-          subjectImage: subjectImageUrl, 
-        }, { merge: true }); 
+          lessonList: existingLessonList,
+          subjectName: values.subject,
+          subjectImage: subjectImageUrl,
+        }, { merge: true });
 
         toast.success('Lesson added successfully!');
         resetForm();
-        setSubjectImageFile(null); 
+        setSubjectImageFile(null);
       } catch (error) {
         console.error('Error adding document: ', error);
         toast.error('Failed to add lesson. Please try again.');
@@ -72,6 +81,12 @@ const AddLessons = () => {
   });
 
   const grades = Array.from({ length: 13 }, (_, i) => `Grade ${i + 1}`);
+
+  useEffect(() => {
+    if (formik.values.grade) {
+      fetchSubjects(formik.values.grade); 
+    }
+  }, [formik.values.grade]);
 
   return (
     <section className="w-full flex h-screen">
@@ -100,18 +115,23 @@ const AddLessons = () => {
             ) : null}
           </div>
 
-          {/* Subject Input (Text Field) */}
+          {/* Subject Input (Dropdown) */}
           <div>
             <label htmlFor="subject" className="block text-sm font-medium">Subject</label>
-            <input
+            <select
               id="subject"
               name="subject"
-              type="text"
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               value={formik.values.subject}
               className="mt-1 p-2 block w-full border border-gray-300 rounded"
-            />
+              disabled={!formik.values.grade} // Disable if no grade is selected
+            >
+              <option value="">Select Subject</option>
+              {subjects.map((subject) => (
+                <option key={subject} value={subject}>{subject}</option>
+              ))}
+            </select>
             {formik.touched.subject && formik.errors.subject ? (
               <div className="text-red-600 text-sm">{formik.errors.subject}</div>
             ) : null}
@@ -126,7 +146,7 @@ const AddLessons = () => {
               type="file"
               accept="image/*"
               onChange={(event) => {
-                setSubjectImageFile(event.currentTarget.files[0]); 
+                setSubjectImageFile(event.currentTarget.files[0]);
               }}
               className="mt-1 p-2 block w-full border border-gray-300 rounded"
             />

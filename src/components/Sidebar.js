@@ -9,6 +9,7 @@ import { PiStudentBold } from "react-icons/pi";
 import { PiUserListLight } from "react-icons/pi";
 import { MdEditNote } from "react-icons/md"
 import { MdNoteAdd } from "react-icons/md";
+import { MdSubject } from "react-icons/md";
 
 
 function Sidebar() {
@@ -31,6 +32,7 @@ function Sidebar() {
     { name: "Students List", icon: PiUserListLight, path: "/students-list" },
     { name: "Add Lessons", icon: MdNoteAdd, path: "/add-lessons" },
     { name: "Lessons List", icon: MdEditNote, path: "/lessons-list" },
+    { name: "Add Subject", icon: MdSubject, path: "/add-subjects" },
   ];
 
   const location = useLocation();

@@ -10,6 +10,7 @@ import AddTeachers from './pages/teachers/AddTeachers';
 import TeachersList from './pages/teachers/TeachersList';
 import AddLessons from './pages/lessons/AddLessons';
 import LessonsList from './pages/lessons/LessonsList';
+import AddSubjects from './pages/subjects/AddSubjects';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="/students-list" element={< StudentList/>} />
         <Route path="/add-lessons" element={< AddLessons/>} />
         <Route path="/lessons-list" element={< LessonsList/>} />
+        <Route path="/add-subjects" element={< AddSubjects/>} />
       </Routes>
     </Router>
   );
