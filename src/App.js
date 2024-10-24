@@ -11,6 +11,7 @@ import TeachersList from './pages/teachers/TeachersList';
 import AddLessons from './pages/lessons/AddLessons';
 import LessonsList from './pages/lessons/LessonsList';
 import AddSubjects from './pages/subjects/AddSubjects';
+import PrivateRoute from './auth/PrivateRoute ';  
 
 function App() {
   return (
@@ -18,14 +19,70 @@ function App() {
       <ToastContainer />
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route path="/dashboard" element={< Main/>} />
-        <Route path="/add-teachers" element={< AddTeachers/>} />
-        <Route path="/teachers-list" element={<TeachersList />} />
-        <Route path="/add-students" element={< AddStudents/>} />
-        <Route path="/students-list" element={< StudentList/>} />
-        <Route path="/add-lessons" element={< AddLessons/>} />
-        <Route path="/lessons-list" element={< LessonsList/>} />
-        <Route path="/add-subjects" element={< AddSubjects/>} />
+        <Route
+          path="/dashboard"
+          element={
+            <PrivateRoute>
+              <Main />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/add-teachers"
+          element={
+            <PrivateRoute>
+              <AddTeachers />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/teachers-list"
+          element={
+            <PrivateRoute>
+              <TeachersList />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/add-students"
+          element={
+            <PrivateRoute>
+              <AddStudents />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/students-list"
+          element={
+            <PrivateRoute>
+              <StudentList />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/add-lessons"
+          element={
+            <PrivateRoute>
+              <AddLessons />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/lessons-list"
+          element={
+            <PrivateRoute>
+              <LessonsList />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/add-subjects"
+          element={
+            <PrivateRoute>
+              <AddSubjects />
+            </PrivateRoute>
+          }
+        />
       </Routes>
     </Router>
   );
