@@ -52,7 +52,7 @@ const Main = () => {
             <h2 className='text-3xl font-bold mb-2 text-blue-700'>Teachers List</h2>
             {teachers.slice(0, 5).map(teacher => (  
               <div key={teacher.id} className='flex justify-between border-b py-2 '>
-                <span>{`${teacher.firstName} ${teacher.lastName}`}</span>
+                <span>{`${teacher.school}`}</span>
                 <span>{teacher.id}</span>
               </div>
             ))}
@@ -63,7 +63,7 @@ const Main = () => {
             <h2 className='text-3xl font-bold mb-2 text-green-700'>Students List</h2>
             {students.slice(0, 5).map(student => (  
               <div key={student.id} className='flex justify-between border-b py-2 '>
-                <span>{`${student.firstName} ${student.lastName}`}</span>
+                <span>{`${student.school}`}</span>
                 <span>{student.id}</span>
               </div>
             ))}
