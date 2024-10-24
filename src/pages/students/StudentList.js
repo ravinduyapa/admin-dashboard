@@ -12,7 +12,7 @@ const StudentList = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 7;
+  const rowsPerPage = 6;
 
   useEffect(() => {
     const fetchStudents = async () => {

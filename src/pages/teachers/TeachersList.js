@@ -14,7 +14,7 @@ const TeachersList = () => {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(7);
+  const [itemsPerPage] = useState(6);
 
   // Fetch teachers from Firestore
   const fetchTeachers = async () => {
@@ -22,7 +22,7 @@ const TeachersList = () => {
       const collectionName = 'Teacher';
       const querySnapshot = await getDocs(collection(db, collectionName));
       const teachersData = querySnapshot.docs.map(doc => ({
-        id: doc.id, // Assuming the document ID is the phone number
+        id: doc.id, 
         ...doc.data(),
       }));
 

@@ -50,13 +50,10 @@ const AddTeachers = () => {
     }),
     onSubmit: async (values, { resetForm }) => {
       try {
-        // Create email from phone number
         const email = `${values.phoneNumber}@example.com`; 
         
-        // Create a user in Firebase Authentication
         await createUserWithEmailAndPassword(auth, email, values.password);
 
-        // Add a new document in Firestore using the phone number as the document ID
         const teacherDoc = doc(collection(db, 'Teacher'), values.phoneNumber);
         await setDoc(teacherDoc, {
           firstName: values.firstName,
@@ -78,10 +75,11 @@ const AddTeachers = () => {
   });
 
   return (
-    <section className="w-full flex h-screen">
+    <section className="w-full flex h-screen overflow-hidden"> 
       <Sidebar />
-      <section className="flex-1 p-10">
-        <h2 className="text-4xl font-semibold mb-6">Add Teacher</h2>
+      <section className="flex-1 p-4 md:p-10 overflow-y-auto"> 
+        <h2 className="text-2xl md:text-4xl font-semibold mb-6">Add Teacher</h2> 
+        
         <form onSubmit={formik.handleSubmit} className="space-y-4">
           {/* First Name */}
           <div>
@@ -95,7 +93,7 @@ const AddTeachers = () => {
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               value={formik.values.firstName}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded"
+              className="mt-1 p-2 block w-full border border-gray-300 rounded focus:ring focus:ring-yellow-400"
             />
             {formik.touched.firstName && formik.errors.firstName ? (
               <div className="text-red-600 text-sm">{formik.errors.firstName}</div>
@@ -114,7 +112,7 @@ const AddTeachers = () => {
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               value={formik.values.lastName}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded"
+              className="mt-1 p-2 block w-full border border-gray-300 rounded focus:ring focus:ring-yellow-400"
             />
             {formik.touched.lastName && formik.errors.lastName ? (
               <div className="text-red-600 text-sm">{formik.errors.lastName}</div>
@@ -133,7 +131,7 @@ const AddTeachers = () => {
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               value={formik.values.phoneNumber}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded"
+              className="mt-1 p-2 block w-full border border-gray-300 rounded focus:ring focus:ring-yellow-400"
             />
             {formik.touched.phoneNumber && formik.errors.phoneNumber ? (
               <div className="text-red-600 text-sm">{formik.errors.phoneNumber}</div>
@@ -152,7 +150,7 @@ const AddTeachers = () => {
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               value={formik.values.birthDate}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded"
+              className="mt-1 p-2 block w-full border border-gray-300 rounded focus:ring focus:ring-yellow-400"
             />
             {formik.touched.birthDate && formik.errors.birthDate ? (
               <div className="text-red-600 text-sm">{formik.errors.birthDate}</div>
@@ -171,7 +169,7 @@ const AddTeachers = () => {
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               value={formik.values.school}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded"
+              className="mt-1 p-2 block w-full border border-gray-300 rounded focus:ring focus:ring-yellow-400"
             />
             {formik.touched.school && formik.errors.school ? (
               <div className="text-red-600 text-sm">{formik.errors.school}</div>
@@ -190,7 +188,7 @@ const AddTeachers = () => {
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               value={formik.values.district}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded"
+              className="mt-1 p-2 block w-full border border-gray-300 rounded focus:ring focus:ring-yellow-400"
             />
             {formik.touched.district && formik.errors.district ? (
               <div className="text-red-600 text-sm">{formik.errors.district}</div>
@@ -209,7 +207,7 @@ const AddTeachers = () => {
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               value={formik.values.password}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded"
+              className="mt-1 p-2 block w-full border border-gray-300 rounded focus:ring focus:ring-yellow-400"
             />
             {formik.touched.password && formik.errors.password ? (
               <div className="text-red-600 text-sm">{formik.errors.password}</div>
@@ -228,7 +226,7 @@ const AddTeachers = () => {
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               value={formik.values.confirmPassword}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded"
+              className="mt-1 p-2 block w-full border border-gray-300 rounded focus:ring focus:ring-yellow-400"
             />
             {formik.touched.confirmPassword && formik.errors.confirmPassword ? (
               <div className="text-red-600 text-sm">{formik.errors.confirmPassword}</div>
@@ -238,7 +236,7 @@ const AddTeachers = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            className="bg-blue-500 text-black px-4 py-2 rounded hover:bg-blue-600"
           >
             Add Teacher
           </button>

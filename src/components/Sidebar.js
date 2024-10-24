@@ -64,13 +64,14 @@ function Sidebar() {
     <motion.section
       animate={isExpanded ? "expanded" : isMobile ? "mobileNonExpanded" : "nonExpanded"}
       variants={variants}
-      className={`bg-gray-950 h-screen flex flex-col justify-between items-center gap-10 relative ${isExpanded ? 'py-8 px-6' : 'px-2 py-6'}`}
+      className={`bg-gray-950 h-screen flex flex-col justify-between items-center relative ${isExpanded ? 'py-4 px-4' : 'px-1 py-2'}`} 
+      style={{ minHeight: '100vh' }}  
     >
-      <div className="flex flex-col justify-center items-center gap-8">
+      <div className="flex flex-col justify-center items-center gap-4"> 
         {isExpanded ? (
           <div id="logo-box">
             <Link to="/dashboard">
-              <h1 className="text-red-600 font-bold text-4xl">
+              <h1 className="text-red-600 font-bold text-3xl"> 
                 ඉස්කෝල <span className="italic text-yellow-500">ඇප්</span>
               </h1>
             </Link>
@@ -78,14 +79,14 @@ function Sidebar() {
         ) : (
           <Link to="/dashboard">
             <div className="flex justify-center items-center">
-              <h1 className="text-red-600 font-bold text-3xl">ඇ</h1>
-              <span className="italic text-yellow-500 text-3xl">ප්</span>
+              <h1 className="text-red-600 font-bold text-2xl">ඇ</h1> 
+              <span className="italic text-yellow-500 text-2xl">ප්</span>
             </div>
           </Link>
           
         )}
 
-        <div id="navLinks-box" className="flex flex-col justify-center items-start gap-5 w-full mt-5">
+        <div id="navLinks-box" className="flex flex-col justify-center items-start gap-3 w-full mt-3"> 
           {navItems.map((item) => (
             <Link
               to={item.path}
@@ -95,13 +96,13 @@ function Sidebar() {
             >
               <div
                 id="link-box"
-                className={`flex justify-start items-center gap-4 w-full cursor-pointer rounded-xl ${location.pathname === item.path ? 'bg-yellow-500 text-black border-2 border-yellow-300' : 'text-white'} ${isExpanded ? 'px-6 py-2' : 'p-2'}`}
+                className={`flex justify-start items-center gap-2 w-full cursor-pointer rounded-xl ${location.pathname === item.path ? 'bg-yellow-500 text-black border-2 border-yellow-300' : 'text-white'} ${isExpanded ? 'px-4 py-2' : 'p-2'}`} 
               >
                 <div className="bg-yellow-300 text-black p-2 rounded-full">
-                  <item.icon className="w-4 h-4 md:w-6 md:h-6" />
+                  <item.icon className="w-4 h-4 md:w-5 md:h-5" /> 
                 </div>
                 {isExpanded && (
-                  <span className="text-lg flex">{item.name}</span>
+                  <span className="text-base flex">{item.name}</span> 
                 )}
               </div>
             </Link>

@@ -7,7 +7,6 @@ import Sidebar from '../../components/Sidebar';
 import { collection, doc, setDoc } from 'firebase/firestore'; 
 import { db } from '../../auth/Firebase'; 
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'; 
- 
 
 const AddStudents = () => {
   const auth = getAuth(); 
@@ -52,13 +51,9 @@ const AddStudents = () => {
     }),
     onSubmit: async (values, { resetForm }) => {
       try {
-        // Create email from phone number
         const email = `${values.phoneNumber}@example.com`; 
         
-        // Create user in Firebase Auth
         await createUserWithEmailAndPassword(auth, email, values.password);
-
-        // Add a new document using the phone number as the document ID
         const studentDoc = doc(collection(db, 'Student'), values.phoneNumber);
         await setDoc(studentDoc, {
           firstName: values.firstName,
@@ -81,10 +76,10 @@ const AddStudents = () => {
   });
 
   return (
-    <section className="w-full flex h-screen">
+    <section className="flex h-screen">
       <Sidebar />
-      <section className="flex-1 p-10">
-        <h2 className="text-4xl font-semibold mb-6">Add Student</h2>
+      <section className="flex-1 overflow-y-auto p-6 md:p-10">
+        <h2 className="text-3xl md:text-4xl font-semibold mb-6">Add Student</h2>
         <form onSubmit={formik.handleSubmit} className="space-y-4">
           {/* First Name */}
           <div>
@@ -241,7 +236,7 @@ const AddStudents = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            className=" bg-blue-500 text-black px-4 py-2 rounded hover:bg-blue-600"
           >
             Add Student
           </button>
