@@ -12,8 +12,6 @@ import { auth } from '../../auth/Firebase';
 const AddTeachers = () => {
   const formik = useFormik({
     initialValues: {
-      firstName: '',
-      lastName: '',
       phoneNumber: '',
       birthDate: '',
       school: '',
@@ -22,12 +20,6 @@ const AddTeachers = () => {
       confirmPassword: '',
     },
     validationSchema: Yup.object({
-      firstName: Yup.string()
-        .max(15, 'Must be 15 characters or less')
-        .required('Required'),
-      lastName: Yup.string()
-        .max(20, 'Must be 20 characters or less')
-        .required('Required'),
       phoneNumber: Yup.string()
         .matches(/^[0-9]+$/, 'Must be only digits')
         .min(10, 'Must be exactly 10 digits')
@@ -56,8 +48,6 @@ const AddTeachers = () => {
 
         const teacherDoc = doc(collection(db, 'Teacher'), values.phoneNumber);
         await setDoc(teacherDoc, {
-          firstName: values.firstName,
-          lastName: values.lastName,
           birthDate: values.birthDate,
           school: values.school,
           district: values.district,
@@ -81,44 +71,6 @@ const AddTeachers = () => {
         <h2 className="text-2xl md:text-4xl font-semibold mb-6">Add Teacher</h2> 
         
         <form onSubmit={formik.handleSubmit} className="space-y-4">
-          {/* First Name */}
-          <div>
-            <label htmlFor="firstName" className="block text-sm font-medium">
-              First Name
-            </label>
-            <input
-              id="firstName"
-              name="firstName"
-              type="text"
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              value={formik.values.firstName}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded focus:ring focus:ring-yellow-400"
-            />
-            {formik.touched.firstName && formik.errors.firstName ? (
-              <div className="text-red-600 text-sm">{formik.errors.firstName}</div>
-            ) : null}
-          </div>
-
-          {/* Last Name */}
-          <div>
-            <label htmlFor="lastName" className="block text-sm font-medium">
-              Last Name
-            </label>
-            <input
-              id="lastName"
-              name="lastName"
-              type="text"
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              value={formik.values.lastName}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded focus:ring focus:ring-yellow-400"
-            />
-            {formik.touched.lastName && formik.errors.lastName ? (
-              <div className="text-red-600 text-sm">{formik.errors.lastName}</div>
-            ) : null}
-          </div>
-
           {/* Phone Number */}
           <div>
             <label htmlFor="phoneNumber" className="block text-sm font-medium">
