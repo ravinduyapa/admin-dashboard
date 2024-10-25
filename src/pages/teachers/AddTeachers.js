@@ -43,9 +43,11 @@ const AddTeachers = () => {
     onSubmit: async (values, { resetForm }) => {
       try {
         const email = `${values.phoneNumber}@example.com`; 
-        
+
+        // Create a new user with email and password
         await createUserWithEmailAndPassword(auth, email, values.password);
 
+        // Create a document in the Teacher collection
         const teacherDoc = doc(collection(db, 'Teacher'), values.phoneNumber);
         await setDoc(teacherDoc, {
           birthDate: values.birthDate,
@@ -55,6 +57,7 @@ const AddTeachers = () => {
           email: email, 
         });
         
+        // Show success message and reset the form
         toast.success('Teacher added successfully!');
         resetForm(); 
       } catch (error) {

@@ -111,7 +111,7 @@ const LessonList = () => {
       let updatedLessons = [...lessons];
       
       // Handle subject image upload
-      let subjectImageUrl = editingLesson.subjectImage; // Keep current image if not updating
+      let subjectImageUrl = editingLesson.subjectImage; 
       if (subjectImageFile) {
         const subjectImageRef = ref(storage, `subjects/${subjectImageFile.name}`);
         const snapshot = await uploadBytes(subjectImageRef, subjectImageFile);
