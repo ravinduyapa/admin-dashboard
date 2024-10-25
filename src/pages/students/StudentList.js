@@ -12,7 +12,7 @@ const StudentList = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 6;
+  const rowsPerPage = 5;
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -36,7 +36,7 @@ const StudentList = () => {
       setFilteredStudents(students);
     } else {
       const filtered = students.filter((student) =>
-        student.id.toLowerCase().includes(value.toLowerCase())
+        `${student.firstName} ${student.lastName}`.toLowerCase().includes(value.toLowerCase())
       );
       setFilteredStudents(filtered);
     }
@@ -55,7 +55,7 @@ const StudentList = () => {
 
   const handleDeleteConfirm = async () => {
     if (studentToDelete) {
-      await deleteDoc(doc(db, 'Student', studentToDelete.id));
+      await deleteDoc(doc(db, 'students', studentToDelete.id));
       setStudents(students.filter((student) => student.id !== studentToDelete.id));
       setFilteredStudents(filteredStudents.filter((student) => student.id !== studentToDelete.id));
       setIsDeleteModalOpen(false);
@@ -63,35 +63,34 @@ const StudentList = () => {
     }
   };
 
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+  
+  const fetchStudents = async () => {
+    const querySnapshot = await getDocs(collection(db, 'Student'));
+    const studentsData = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    setStudents(studentsData);
+    setFilteredStudents(studentsData);
+  };
+  
   const handleUpdate = async (event) => {
     event.preventDefault(); 
     const studentDoc = doc(db, 'Student', selectedStudent.id);
-    
-    // Update the Firestore document with new data
     await updateDoc(studentDoc, {
+      firstName: selectedStudent.firstName,
+      lastName: selectedStudent.lastName,
       birthDate: selectedStudent.birthDate,
       phoneNumber: selectedStudent.phoneNumber, 
       school: selectedStudent.school,
       district: selectedStudent.district,
     });
-  
-    // Update the students array in the local state
-    setStudents((prevStudents) =>
-      prevStudents.map((student) =>
-        student.id === selectedStudent.id ? selectedStudent : student
-      )
-    );
-  
-    // Update the filteredStudents array if search term is active
-    setFilteredStudents((prevFiltered) =>
-      prevFiltered.map((student) =>
-        student.id === selectedStudent.id ? selectedStudent : student
-      )
-    );
-  
-    // Close the modal and clear the selected student
     setIsModalOpen(false);
     setSelectedStudent(null);
+    fetchStudents(); 
   };
   
 
@@ -117,7 +116,7 @@ const StudentList = () => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Search by phone number"
+              placeholder="Search by full name"
               value={searchTerm}
               onChange={handleSearchChange}
               className="px-4 py-2 border border-teal-600 rounded-lg shadow-sm w-72"
@@ -127,10 +126,10 @@ const StudentList = () => {
                 {filteredStudents.map((student) => (
                   <li
                     key={student.id}
-                    onClick={() => setSearchTerm(student.id)}
+                    onClick={() => setSearchTerm(`${student.firstName} ${student.lastName}`)}
                     className="px-4 py-2 cursor-pointer hover:bg-gray-200"
                   >
-                    {student.id}
+                    {student.firstName} {student.lastName}
                   </li>
                 ))}
               </ul>
@@ -141,8 +140,9 @@ const StudentList = () => {
           <table className="min-w-full bg-white border border-gray-200">
             <thead className="bg-blue-600 text-white">
               <tr>
-                <th className="px-6 py-3 border-b text-left">Phone Number</th>
+                <th className="px-6 py-3 border-b text-left">Name</th>
                 <th className="px-6 py-3 border-b text-left">Birthdate</th>
+                <th className="px-6 py-3 border-b text-left">Phone Number</th>
                 <th className="px-6 py-3 border-b text-left">School</th>
                 <th className="px-6 py-3 border-b text-left">District</th>
                 <th className="px-6 py-3 border-b text-left">Action</th>
@@ -153,9 +153,12 @@ const StudentList = () => {
                 <tr
                   key={student.id}
                   className={index % 2 === 0 ? 'bg-gray-100' : 'bg-white'}
-                >  
-                  <td className="px-6 py-4 border-b">{student.id}</td>
+                >
+                  <td className="px-6 py-4 border-b">
+                    {student.firstName} {student.lastName}
+                  </td>
                   <td className="px-6 py-4 border-b">{student.birthDate}</td>
+                  <td className="px-6 py-4 border-b">{student.id}</td>
                   <td className="px-6 py-4 border-b">{student.school}</td>
                   <td className="px-6 py-4 border-b">{student.district}</td>
                   <td className="px-6 py-4 border-b">
@@ -203,7 +206,27 @@ const StudentList = () => {
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4">Edit Student</h2> 
+            <h2 className="text-xl font-semibold mb-4">Edit Student</h2>
+            <div className="mb-4">
+              <label className="block text-gray-700 font-bold mb-2">First Name</label>
+              <input
+                type="text"
+                name="firstName"
+                value={selectedStudent.firstName}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 font-bold mb-2">Last Name</label>
+              <input
+                type="text"
+                name="lastName"
+                value={selectedStudent.lastName}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
+              />
+            </div>
             <div className="mb-4">
               <label className="block text-gray-700 font-bold mb-2">Birthdate</label>
               <input
@@ -219,8 +242,9 @@ const StudentList = () => {
               <input
                 type="text"
                 name="phoneNumber"
-                value={selectedStudent.phoneNumber}
+                value={selectedStudent.id}
                 onChange={handleInputChange}
+                readOnly
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
               />
             </div>
@@ -244,20 +268,18 @@ const StudentList = () => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
               />
             </div>
-            <div className="flex justify-end">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-2"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUpdate}
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              >
-                Update
-              </button>
-            </div>
+            <button
+              onClick={handleUpdate}
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Update
+            </button>
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="ml-2 bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
@@ -265,20 +287,20 @@ const StudentList = () => {
       {isDeleteModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4">Delete Student</h2>
-            <p>Are you sure you want to delete this student?</p>
+            <h2 className="text-xl font-semibold mb-4">Confirm Delete</h2>
+            <p>Are you sure you want to delete {studentToDelete?.firstName} {studentToDelete?.lastName}?</p>
             <div className="flex justify-end mt-4">
-              <button
-                onClick={() => setIsDeleteModalOpen(false)}
-                className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-2"
-              >
-                Cancel
-              </button>
               <button
                 onClick={handleDeleteConfirm}
                 className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
               >
                 Delete
+              </button>
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="ml-2 bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+              >
+                Cancel
               </button>
             </div>
           </div>
