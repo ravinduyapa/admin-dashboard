@@ -11,7 +11,7 @@ import TeachersList from './pages/teachers/TeachersList';
 import AddLessons from './pages/lessons/AddLessons';
 import LessonsList from './pages/lessons/LessonsList';
 import AddSubjects from './pages/subjects/AddSubjects';
-import PrivateRoute from './auth/PrivateRoute ';  
+import PrivateRoute from './auth/PrivateRoute '; 
 
 function App() {
   return (

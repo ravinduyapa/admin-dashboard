@@ -29,10 +29,11 @@ const Main = () => {
     setStudents(studentsData);
   };
 
-  // Fetching lessons from Firestore
+  // Fetching Grade 1 lessons from Firestore
   const fetchLessons = useCallback(async () => {
     try {
-      const querySnapshot = await getDocs(collection(db, 'lessons'));
+      const grade1Ref = collection(db, 'Grade 1');
+      const querySnapshot = await getDocs(grade1Ref);
       const lessonsData = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         lessonList: doc.data().lessonList || [],
@@ -40,9 +41,9 @@ const Main = () => {
         subjectImage: doc.data().subjectImage || '',
       }));
       setLessons(lessonsData);
-      console.log('Fetched lessons data:', lessonsData);
+      console.log('Fetched Grade 1 lessons data:', lessonsData);
     } catch (error) {
-      console.error('Error fetching lessons:', error);
+      console.error('Error fetching Grade 1 lessons:', error);
     }
   }, []);
 
@@ -83,20 +84,27 @@ const Main = () => {
 
         {/* Lessons Grid with Navigation */}
         <Link to="/lessons-list" className="flex-1 bg-yellow-100 rounded-lg p-4 overflow-y-auto max-h-64 w-full">
-          <h2 className="text-3xl font-bold mb-2 text-yellow-700">Lessons List</h2>
+          <h2 className="text-3xl font-bold mb-2 text-yellow-700">Grade 1 Lessons List</h2>
           {lessons.length > 0 ? (
             lessons.slice(0, 5).map((lesson) => (
               <div key={lesson.id} className="border-b py-2">
-                <h3 className="font-bold">{lesson.subjectName}</h3>
-                {lesson.lessonList.map((lessonName, index) => (
-                  <div key={index} className="flex justify-between">
-                    <span>{lessonName}</span>
-                  </div>
-                ))}
+                {/* Subject Name */}
+                <div className="flex items-center mb-2">
+                  <h3 className="font-bold flex-1 text-black">{lesson.subjectName}</h3>
+                </div>
+
+                {/* Lesson List */}
+                <div className="flex flex-wrap gap-2 pl-4">
+                  {lesson.lessonList.map((lessonName, index) => (
+                    <span key={index} className="bg-yellow-200 text-yellow-800 px-2 py-1 rounded shadow-sm">
+                      {lessonName}
+                    </span>
+                  ))}
+                </div>
               </div>
             ))
           ) : (
-            <p>No lessons found.</p>
+            <p>No lessons found for Grade 1.</p>
           )}
         </Link>
       </section>

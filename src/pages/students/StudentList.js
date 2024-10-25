@@ -66,15 +66,34 @@ const StudentList = () => {
   const handleUpdate = async (event) => {
     event.preventDefault(); 
     const studentDoc = doc(db, 'Student', selectedStudent.id);
+    
+    // Update the Firestore document with new data
     await updateDoc(studentDoc, {
       birthDate: selectedStudent.birthDate,
       phoneNumber: selectedStudent.phoneNumber, 
       school: selectedStudent.school,
       district: selectedStudent.district,
     });
+  
+    // Update the students array in the local state
+    setStudents((prevStudents) =>
+      prevStudents.map((student) =>
+        student.id === selectedStudent.id ? selectedStudent : student
+      )
+    );
+  
+    // Update the filteredStudents array if search term is active
+    setFilteredStudents((prevFiltered) =>
+      prevFiltered.map((student) =>
+        student.id === selectedStudent.id ? selectedStudent : student
+      )
+    );
+  
+    // Close the modal and clear the selected student
     setIsModalOpen(false);
     setSelectedStudent(null);
   };
+  
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
@@ -236,7 +255,7 @@ const StudentList = () => {
                 onClick={handleUpdate}
                 className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
               >
-                Save
+                Update
               </button>
             </div>
           </div>
