@@ -3,6 +3,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { NavLink } from 'react-router-dom';
 import Sidebar from '../../components/Sidebar';
 import { collection, doc, setDoc, query, where, getDocs } from 'firebase/firestore'; 
 import { db } from '../../auth/Firebase';
@@ -56,7 +57,16 @@ const AddSubjects = () => {
     <section className="w-full flex h-screen">
       <Sidebar />
       <section className="flex-1 p-10">
-        <h2 className="text-4xl font-semibold mb-6">Add Subject</h2>
+        {/* Button to navigate to Subject List */}
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-4xl font-semibold">Add Subject</h2>
+          <NavLink to="/subject-list">
+            <button className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+              Subject List
+            </button>
+          </NavLink>
+        </div>
+        
         <form onSubmit={formik.handleSubmit} className="space-y-4">
           {/* Select Grade */}
           <div>

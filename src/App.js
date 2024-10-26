@@ -12,6 +12,7 @@ import AddLessons from './pages/lessons/AddLessons';
 import LessonsList from './pages/lessons/LessonsList';
 import AddSubjects from './pages/subjects/AddSubjects';
 import PrivateRoute from './auth/PrivateRoute '; 
+import SubjectList from './pages/subjects/SubjectList';
 
 function App() {
   return (
@@ -80,6 +81,14 @@ function App() {
           element={
             <PrivateRoute>
               <AddSubjects />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/subject-list"
+          element={
+            <PrivateRoute>
+              <SubjectList />
             </PrivateRoute>
           }
         />
