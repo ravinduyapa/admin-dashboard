@@ -92,7 +92,7 @@ const AddLessons = () => {
     <section className="w-full flex h-screen">
       <Sidebar />
       <section className="flex-1 p-10">
-        <h2 className="text-4xl font-semibold mb-6">Add Lesson</h2>
+        <h2 className="text-4xl font-semibold mb-6">Add Lesson Name</h2>
         <form onSubmit={formik.handleSubmit} className="space-y-4">
           {/* Select Grade */}
           <div>

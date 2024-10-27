@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
 import { collection, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../auth/Firebase';
+import { getAuth, deleteUser, signInWithEmailAndPassword } from 'firebase/auth';
+
 
 const StudentList = () => {
   const [students, setStudents] = useState([]);
@@ -13,21 +15,38 @@ const StudentList = () => {
   const [studentToDelete, setStudentToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
+  const [districts, setDistricts] = useState([]);
 
   useEffect(() => {
-    const fetchStudents = async () => {
-      const querySnapshot = await getDocs(collection(db, 'Student'));
-      const studentsData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setStudents(studentsData);
-      setFilteredStudents(studentsData);
+    const fetchDistricts = async () => {
+      const districtList = [
+        'Colombo',
+        'Gampaha',
+        'Kandy',
+        'Matara',
+        'Jaffna',
+      ];
+      setDistricts(districtList);
     };
-
+    
+    fetchDistricts();
+  }, []);
+  
+  useEffect(() => {
     fetchStudents();
   }, []);
 
+  const fetchStudents = async () => {
+    const querySnapshot = await getDocs(collection(db, 'Student'));
+    const studentsData = querySnapshot.docs.map((doc) => {
+      return {
+        id: doc.id,
+        ...doc.data(),
+      };
+    });
+    setStudents(studentsData);
+    setFilteredStudents(studentsData);
+  };
   const handleSearchChange = (event) => {
     const value = event.target.value;
     setSearchTerm(value);
@@ -40,7 +59,7 @@ const StudentList = () => {
       );
       setFilteredStudents(filtered);
     }
-    setCurrentPage(1); 
+    setCurrentPage(1);
   };
 
   const handleEditClick = (student) => {
@@ -53,38 +72,40 @@ const StudentList = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const handleDeleteConfirm = async () => {
-    if (studentToDelete) {
-      await deleteDoc(doc(db, 'students', studentToDelete.id));
-      setStudents(students.filter((student) => student.id !== studentToDelete.id));
-      setFilteredStudents(filteredStudents.filter((student) => student.id !== studentToDelete.id));
-      setIsDeleteModalOpen(false);
-      setStudentToDelete(null);
+  // Delete user from Firebase Authentication
+  const deleteAuthUser = async (email, password) => {
+    const auth = getAuth();
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      await deleteUser(userCredential.user);
+    } catch (error) {
+      console.error('Error deleting user from Firebase Auth:', error);
     }
   };
 
-  useEffect(() => {
-    fetchStudents();
-  }, []);
-  
-  const fetchStudents = async () => {
-    const querySnapshot = await getDocs(collection(db, 'Student'));
-    const studentsData = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-    setStudents(studentsData);
-    setFilteredStudents(studentsData);
+  const handleDeleteConfirm = async () => {
+    if (studentToDelete) {
+      try {
+        const email = `${studentToDelete.id}@example.com`;
+        await deleteAuthUser(email, studentToDelete.password);
+        await deleteDoc(doc(db, 'Student', studentToDelete.id));
+        fetchStudents();
+        setIsDeleteModalOpen(false);
+        setStudentToDelete(null);
+      } catch (error) {
+        console.error('Error deleting student:', error);
+      }
+    }
   };
   
+
   const handleUpdate = async (event) => {
-    event.preventDefault(); 
+    event.preventDefault();
     const studentDoc = doc(db, 'Student', selectedStudent.id);
     await updateDoc(studentDoc, {
       firstName: selectedStudent.firstName,
       lastName: selectedStudent.lastName,
-      birthDate: selectedStudent.birthDate,
-      phoneNumber: selectedStudent.phoneNumber, 
+      birth: selectedStudent.birth,
       school: selectedStudent.school,
       district: selectedStudent.district,
     });
@@ -92,17 +113,14 @@ const StudentList = () => {
     setSelectedStudent(null);
     fetchStudents(); 
   };
-  
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
     setSelectedStudent({ ...selectedStudent, [name]: value });
   };
 
-  // Calculate the number of pages
+  // Pagination logic
   const totalPages = Math.ceil(filteredStudents.length / rowsPerPage);
-
-  // Get current rows to display
   const indexOfLastStudent = currentPage * rowsPerPage;
   const indexOfFirstStudent = indexOfLastStudent - rowsPerPage;
   const currentStudents = filteredStudents.slice(indexOfFirstStudent, indexOfLastStudent);
@@ -150,14 +168,9 @@ const StudentList = () => {
             </thead>
             <tbody>
               {currentStudents.map((student, index) => (
-                <tr
-                  key={student.id}
-                  className={index % 2 === 0 ? 'bg-gray-100' : 'bg-white'}
-                >
-                  <td className="px-6 py-4 border-b">
-                    {student.firstName} {student.lastName}
-                  </td>
-                  <td className="px-6 py-4 border-b">{student.birthDate}</td>
+                <tr key={student.id} className={index % 2 === 0 ? 'bg-gray-100' : 'bg-white'}>
+                  <td className="px-6 py-4 border-b">{student.firstName} {student.lastName}</td>
+                  <td className="px-6 py-4 border-b">{student.birth}</td>
                   <td className="px-6 py-4 border-b">{student.id}</td>
                   <td className="px-6 py-4 border-b">{student.school}</td>
                   <td className="px-6 py-4 border-b">{student.district}</td>
@@ -228,11 +241,11 @@ const StudentList = () => {
               />
             </div>
             <div className="mb-4">
-              <label className="block text-gray-700 font-bold mb-2">Birthdate</label>
+              <label className="block text-gray-700 font-bold mb-2">Birth Date</label>
               <input
                 type="date"
-                name="birthDate"
-                value={selectedStudent.birthDate}
+                name="birth"
+                value={selectedStudent.birth}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
               />
@@ -244,7 +257,6 @@ const StudentList = () => {
                 name="phoneNumber"
                 value={selectedStudent.id}
                 onChange={handleInputChange}
-                readOnly
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
               />
             </div>
@@ -260,26 +272,35 @@ const StudentList = () => {
             </div>
             <div className="mb-4">
               <label className="block text-gray-700 font-bold mb-2">District</label>
-              <input
+               <select
                 type="text"
                 name="district"
                 value={selectedStudent.district}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
-              />
+              >
+                <option value="" label="Select district" />
+                {districts.map((district, index) => (
+                  <option key={index} value={district}>
+                    {district}
+                  </option>
+                ))}
+              </select>
             </div>
-            <button
-              onClick={handleUpdate}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            >
-              Update
-            </button>
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="ml-2 bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-            >
-              Cancel
-            </button>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded mr-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdate}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              >
+                Update
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -288,19 +309,19 @@ const StudentList = () => {
         <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h2 className="text-xl font-semibold mb-4">Confirm Delete</h2>
-            <p>Are you sure you want to delete {studentToDelete?.firstName} {studentToDelete?.lastName}?</p>
-            <div className="flex justify-end mt-4">
+            <p>Are you sure you want to delete this student?</p>
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded mr-2"
+              >
+                Cancel
+              </button>
               <button
                 onClick={handleDeleteConfirm}
                 className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
               >
                 Delete
-              </button>
-              <button
-                onClick={() => setIsDeleteModalOpen(false)}
-                className="ml-2 bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-              >
-                Cancel
               </button>
             </div>
           </div>

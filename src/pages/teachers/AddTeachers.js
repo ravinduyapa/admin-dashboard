@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { toast, ToastContainer } from 'react-toastify';
@@ -6,16 +6,32 @@ import 'react-toastify/dist/ReactToastify.css';
 import Sidebar from '../../components/Sidebar';
 import { collection, doc, setDoc } from 'firebase/firestore'; 
 import { db } from '../../auth/Firebase'; 
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../auth/Firebase'; 
+import { createUserWithEmailAndPassword ,getAuth} from 'firebase/auth';
 
 const AddTeachers = () => {
+  const auth = getAuth(); 
+  const [districts, setDistricts] = useState([]);
+
+  useEffect(() => {
+    const fetchDistricts = async () => {
+      const districtList = [
+        'Colombo',
+        'Gampaha',
+        'Kandy',
+        'Matara',
+        'Jaffna',
+      ];
+      setDistricts(districtList);
+    };
+    
+    fetchDistricts();
+  }, []);
   const formik = useFormik({
     initialValues: {
       firstName: '',
       lastName: '',
       phoneNumber: '',
-      birthDate: '',
+      birth: '',
       school: '',
       district: '',
       password: '',
@@ -33,7 +49,7 @@ const AddTeachers = () => {
         .min(10, 'Must be exactly 10 digits')
         .max(10, 'Must be exactly 10 digits')
         .required('Required'),
-      birthDate: Yup.date()
+      birth: Yup.date()
         .required('Required')
         .max(new Date(), 'Birthdate cannot be in the future'),
       school: Yup.string()
@@ -51,12 +67,13 @@ const AddTeachers = () => {
     onSubmit: async (values, { resetForm }) => {
       try {
         const email = `${values.phoneNumber}@example.com`; 
+        
         await createUserWithEmailAndPassword(auth, email, values.password);
         const teacherDoc = doc(collection(db, 'Teacher'), values.phoneNumber);
         await setDoc(teacherDoc, {
           firstName: values.firstName,
           lastName: values.lastName,
-          birthDate: values.birthDate,
+          birth: values.birth,
           school: values.school,
           district: values.district,
           password: values.password, 
@@ -128,18 +145,18 @@ const AddTeachers = () => {
           </div>
 
           <div>
-            <label htmlFor="birthDate" className="block text-sm font-medium">Birth Date</label>
+            <label htmlFor="birth" className="block text-sm font-medium">Birth Date</label>
             <input
-              id="birthDate"
-              name="birthDate"
+              id="birth"
+              name="birth"
               type="date"
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              value={formik.values.birthDate}
+              value={formik.values.birth}
               className="mt-1 p-2 block w-full border border-gray-300 rounded"
             />
-            {formik.touched.birthDate && formik.errors.birthDate && (
-              <div className="text-red-600 text-sm">{formik.errors.birthDate}</div>
+            {formik.touched.birth && formik.errors.birth && (
+              <div className="text-red-600 text-sm">{formik.errors.birth}</div>
             )}
           </div>
 
@@ -160,20 +177,28 @@ const AddTeachers = () => {
             )}
           </div>
 
-          <div>
-            <label htmlFor="district" className="block text-sm font-medium">District</label>
-            <input
-              id="district"
-              name="district"
-              type="text"
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              value={formik.values.district}
-              className="mt-1 p-2 block w-full border border-gray-300 rounded"
-            />
-            {formik.touched.district && formik.errors.district && (
-              <div className="text-red-600 text-sm">{formik.errors.district}</div>
-            )}
+          <div className="flex flex-col">
+              <label htmlFor="district" className="block text-sm font-medium">
+                District
+              </label>
+              <select
+                id="district"
+                name="district"
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                value={formik.values.district}
+                className="mt-1 p-2 block w-full border border-gray-300 rounded"
+              >
+                <option value="" label="Select district" />
+                {districts.map((district, index) => (
+                  <option key={index} value={district}>
+                    {district}
+                  </option>
+                ))}
+              </select>
+              {formik.touched.district && formik.errors.district ? (
+                <div className="text-red-600 text-sm">{formik.errors.district}</div>
+              ) : null}
           </div>
 
           <div>

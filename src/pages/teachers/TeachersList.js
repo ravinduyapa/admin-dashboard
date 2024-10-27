@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
 import { collection, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../auth/Firebase';
+import { getAuth, deleteUser, signInWithEmailAndPassword } from 'firebase/auth';
 
 const TeachersList = () => {
   const [teachers, setTeachers] = useState([]);
@@ -11,6 +12,23 @@ const TeachersList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [teacherToDelete, setTeacherToDelete] = useState(null);
+  const [districts, setDistricts] = useState([]);
+
+  //Fetch Distrct
+  useEffect(() => {
+    const fetchDistricts = async () => {
+      const districtList = [
+        'Colombo',
+        'Gampaha',
+        'Kandy',
+        'Matara',
+        'Jaffna',
+      ];
+      setDistricts(districtList);
+    };
+    
+    fetchDistricts();
+  }, []);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -22,12 +40,9 @@ const TeachersList = () => {
       const collectionName = 'Teacher';
       const querySnapshot = await getDocs(collection(db, collectionName));
       const teachersData = querySnapshot.docs.map(doc => ({
-        id: doc.id, // Assuming the document ID is the phone number
+        id: doc.id, 
         ...doc.data(),
       }));
-
-      // Log the fetched data to the console for debugging
-      console.log('Fetched Teachers:', teachersData);
 
       setTeachers(teachersData);
       setFilteredTeachers(teachersData);
@@ -70,14 +85,29 @@ const TeachersList = () => {
     setIsDeleteModalOpen(true);
   };
 
-  // Confirm delete action
+  // Delete user from Firebase Authentication
+  const deleteAuthUser = async (email, password) => {
+    const auth = getAuth();
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      await deleteUser(userCredential.user);
+    } catch (error) {
+      console.error('Error deleting user from Firebase Auth:', error);
+    }
+  };
+
   const handleDeleteConfirm = async () => {
     if (teacherToDelete) {
-      await deleteDoc(doc(db, 'Teacher', teacherToDelete.id)); 
-      setTeachers(teachers.filter((teacher) => teacher.id !== teacherToDelete.id));
-      setFilteredTeachers(filteredTeachers.filter((teacher) => teacher.id !== teacherToDelete.id));
-      setIsDeleteModalOpen(false);
-      setTeacherToDelete(null);
+      try {
+        const email = `${teacherToDelete.id}@example.com`;
+        await deleteAuthUser(email, teacherToDelete.password);
+        await deleteDoc(doc(db, 'Teacher', teacherToDelete.id));
+        fetchTeachers();
+        setIsDeleteModalOpen(false);
+        setTeacherToDelete(null);
+      } catch (error) {
+        console.error('Error deleting teacher:', error);
+      }
     }
   };
 
@@ -89,8 +119,7 @@ const TeachersList = () => {
         await updateDoc(teacherDoc, {
           firstName: selectedTeacher.firstName,
           lastName: selectedTeacher.lastName,
-          birthDate: selectedTeacher.birthDate,
-          phoneNumber: selectedTeacher.id,
+          birth: selectedTeacher.birth,
           school: selectedTeacher.school,
           district: selectedTeacher.district,
         });
@@ -175,7 +204,7 @@ const TeachersList = () => {
               {currentTeachers.map((teacher, index) => (
                 <tr key={teacher.id} className={index % 2 === 0 ? 'bg-gray-100' : 'bg-white'}>
                   <td className="px-6 py-4 border-b">{teacher.firstName} {teacher.lastName}</td>
-                  <td className="px-6 py-4 border-b">{teacher.birthDate}</td>
+                  <td className="px-6 py-4 border-b">{teacher.birth}</td>
                   <td className="px-6 py-4 border-b">{teacher.id}</td> 
                   <td className="px-6 py-4 border-b">{teacher.school}</td>
                   <td className="px-6 py-4 border-b">{teacher.district}</td>
@@ -250,8 +279,8 @@ const TeachersList = () => {
               <label className="block mb-2">Birth Date</label>
               <input
                 type="date"
-                name="birthDate"
-                value={selectedTeacher?.birthDate || ''}
+                name="birth"
+                value={selectedTeacher?.birth || ''}
                 onChange={handleInputChange}
                 className="border border-gray-300 p-2 w-full rounded"
               />
@@ -277,15 +306,22 @@ const TeachersList = () => {
                 className="border border-gray-300 p-2 w-full rounded"
               />
             </div>
-            <div>
-              <label className="block mb-2">District</label>
-              <input
+            <div className="mb-4">
+              <label className="block text-gray-700 font-bold mb-2">District</label>
+               <select
                 type="text"
                 name="district"
-                value={selectedTeacher?.district || ''}
+                value={selectedTeacher.district}
                 onChange={handleInputChange}
-                className="border border-gray-300 p-2 w-full rounded"
-              />
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
+              >
+                <option value="" label="Select district" />
+                {districts.map((district, index) => (
+                  <option key={index} value={district}>
+                    {district}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="flex justify-start mt-4">
               <button

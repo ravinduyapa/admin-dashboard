@@ -5,7 +5,7 @@ import Sidebar from '../../components/Sidebar';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; 
 import { storage } from '../../auth/Firebase'; 
 
-// Modal Component
+// Modal Component for Delete Confirmation
 const Modal = ({ isOpen, onClose, onConfirm, lessonName }) => {
   if (!isOpen) return null;
 
@@ -23,6 +23,54 @@ const Modal = ({ isOpen, onClose, onConfirm, lessonName }) => {
   );
 };
 
+// EditModal Component for Editing Lessons
+const EditModal = ({ isOpen, onClose, lessonName, subjectImageUrl, onLessonNameChange, onImageChange, onUpdate }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+      <div className="bg-white rounded shadow-lg p-6 w-1/3">
+        <h3 className="text-lg font-semibold">Edit Lesson</h3>
+        
+        {/* Lesson Name Input */}
+        <div>
+          <label htmlFor="lessonName" className="block text-sm font-medium">Lesson Name</label>
+          <input
+            id="lessonName"
+            name="lessonName"
+            type="text"
+            value={lessonName}
+            onChange={onLessonNameChange}
+            className="mt-1 p-2 block w-full border border-gray-300 rounded"
+          />
+        </div>
+
+        {/* Subject Image Input */}
+        <div>
+          <label htmlFor="subjectImage" className="block text-sm font-medium">Subject Image</label>
+          <div className="mt-2">
+            <img src={subjectImageUrl} alt="Current Subject" className="max-w-12 h-12 rounded shadow mb-2" />
+          </div>
+          <input
+            id="subjectImage"
+            name="subjectImage"
+            type="file"
+            accept="image/*"
+            onChange={onImageChange}
+            className="mt-1 p-2 block w-full border border-gray-300 rounded"
+          />
+        </div>
+
+        <div className="flex justify-end mt-4">
+          <button onClick={onClose} className="bg-gray-300 px-4 py-2 rounded mr-2">Cancel</button>
+          <button onClick={onUpdate} className="bg-blue-500 text-white px-4 py-2 rounded">Update</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// LessonList Component
 const LessonList = () => {
   const [grade, setGrade] = useState('');
   const [subject, setSubject] = useState('');
@@ -32,6 +80,7 @@ const LessonList = () => {
   const [subjectImageFile, setSubjectImageFile] = useState(null);
   const [lessonName, setLessonName] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false); 
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [lessonToDelete, setLessonToDelete] = useState(null); 
   const [subjectImageUrl, setSubjectImageUrl] = useState('');
 
@@ -42,7 +91,6 @@ const LessonList = () => {
     const subjectDocs = await getDocs(subjectsRef);
     const fetchedSubjects = subjectDocs.docs.map(doc => doc.id); 
     setSubjects(fetchedSubjects);
-    console.log('Fetched subjects for grade', grade, ':', fetchedSubjects);
   };
 
   const fetchLessons = useCallback(async () => {
@@ -52,12 +100,9 @@ const LessonList = () => {
       
       if (docSnap.exists()) {
         const data = docSnap.data(); 
-        const lessonList = data.lessonList || [];
-        setLessons(lessonList); 
+        setLessons(data.lessonList || []); 
         setSubjectImageUrl(data.subjectImage); 
-        console.log('Fetched document data:', data);
       } else {
-        console.log('No document found for this grade and subject');
         setLessons([]); 
         setSubjectImageUrl(''); 
       }
@@ -65,9 +110,7 @@ const LessonList = () => {
   }, [grade, subject]);
 
   useEffect(() => {
-    if (grade) {
-      fetchSubjects(grade); 
-    }
+    if (grade) fetchSubjects(grade);
   }, [grade]);
 
   useEffect(() => {
@@ -78,6 +121,7 @@ const LessonList = () => {
     setEditingLesson(lesson);
     setLessonName(lesson); 
     setSubjectImageFile(null);
+    setIsEditModalOpen(true);
   };
 
   const handleDelete = (lesson) => {
@@ -109,29 +153,27 @@ const LessonList = () => {
 
     try {
       let updatedLessons = [...lessons];
-      
-      // Handle subject image upload
-      let subjectImageUrl = editingLesson.subjectImage; 
+      let updatedImageUrl = subjectImageUrl;
+
       if (subjectImageFile) {
         const subjectImageRef = ref(storage, `subjects/${subjectImageFile.name}`);
         const snapshot = await uploadBytes(subjectImageRef, subjectImageFile);
-        subjectImageUrl = await getDownloadURL(snapshot.ref);
-        console.log('Uploaded subject image URL:', subjectImageUrl);
+        updatedImageUrl = await getDownloadURL(snapshot.ref);
       }
 
-      // Update the lesson name in the array
       updatedLessons = updatedLessons.map(lesson => lesson === editingLesson ? lessonName : lesson);
-
       const docRef = doc(collection(db, grade), subject);
       await updateDoc(docRef, {
-        lessonList: updatedLessons 
+        lessonList: updatedLessons,
+        subjectImage: updatedImageUrl
       });
 
       setLessons(updatedLessons);
       setEditingLesson(null);
       setSubjectImageFile(null);
       setLessonName('');
-      setSubjectImageUrl(subjectImageUrl); 
+      setSubjectImageUrl(updatedImageUrl);
+      setIsEditModalOpen(false);
     } catch (error) {
       console.error('Error updating lesson: ', error);
     }
@@ -193,67 +235,19 @@ const LessonList = () => {
               {lessons.map((lesson, index) => (
                 <li key={index} className="border-b py-2 flex items-center justify-between">
                   <div className="flex items-center">
-                    <span className="font-medium">Lesson Name:</span> 
-                    <span className="ml-4 font-bold text-red-500">{lesson}</span> 
+                    <p className="text-md">{lesson}</p>
                   </div>
-                  <div>
-                    <button onClick={() => handleEdit(lesson)} className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 mr-2">
-                      Edit
-                    </button>
-                    <button onClick={() => handleDelete(lesson)} className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">
-                      Delete
-                    </button>
+                  <div className="flex items-center space-x-2">
+                    <button onClick={() => handleEdit(lesson)} className="bg-blue-500 text-white px-3 py-1 rounded">Edit</button>
+                    <button onClick={() => handleDelete(lesson)} className="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
                   </div>
                 </li>
               ))}
             </ul>
           ) : (
-            <p>No lessons found for this grade and subject.</p>
+            <p>No lessons found.</p>
           )}
         </div>
-
-        {/* Edit Lesson Section */}
-        {editingLesson && (
-          <div className="mt-6">
-            <h3 className="text-2xl font-semibold mb-4">Edit Lesson</h3>
-            <div>
-              <label htmlFor="lessonName" className="block text-sm font-medium">Lesson Name</label>
-              <input
-                id="lessonName"
-                name="lessonName"
-                type="text"
-                value={lessonName}
-                onChange={(e) => setLessonName(e.target.value)}
-                className="mt-1 p-2 block w-full border border-gray-300 rounded"
-              />
-            </div>
-            <div>
-              <label htmlFor="subjectImage" className="block text-sm font-medium">Subject Image</label>
-              {editingLesson && (
-                <div className="mt-2">
-                  <img src={subjectImageUrl} alt="Current Subject" className="max-w-12 h-12 rounded shadow mb-2" />
-                </div>
-              )}
-              <input
-                id="subjectImage"
-                name="subjectImage"
-                type="file"
-                accept="image/*"
-                onChange={(event) => {
-                  setSubjectImageFile(event.currentTarget.files[0]); 
-                }}
-                className="mt-1 p-2 block w-full border border-gray-300 rounded"
-              />
-            </div>
-
-            <button
-              onClick={handleUpdate}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mt-4"
-            >
-              Update Lesson
-            </button>
-          </div>
-        )}
 
         {/* Delete Confirmation Modal */}
         <Modal
@@ -261,6 +255,17 @@ const LessonList = () => {
           onClose={() => setIsModalOpen(false)}
           onConfirm={confirmDelete}
           lessonName={lessonToDelete || ''}
+        />
+
+        {/* Edit Lesson Modal */}
+        <EditModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          lessonName={lessonName}
+          subjectImageUrl={subjectImageUrl}
+          onLessonNameChange={(e) => setLessonName(e.target.value)}
+          onImageChange={(e) => setSubjectImageFile(e.target.files[0])}
+          onUpdate={handleUpdate}
         />
       </section>
     </section>
