@@ -1,19 +1,19 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { collection, doc, getDoc, updateDoc, getDocs, deleteDoc } from 'firebase/firestore'; 
+import { collection, doc, getDoc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore'; 
 import { db } from '../../auth/Firebase'; 
 import Sidebar from '../../components/Sidebar';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; 
 import { storage } from '../../auth/Firebase'; 
 
 // Modal Component for Delete Confirmation
-const Modal = ({ isOpen, onClose, onConfirm, lessonName }) => {
+const Modal = ({ isOpen, onClose, onConfirm, message }) => {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
       <div className="bg-white rounded shadow-lg p-6">
         <h3 className="text-lg font-semibold">Confirm Delete</h3>
-        <p>Are you sure you want to delete {lessonName}?</p>
+        <p>{message}</p>
         <div className="flex justify-end mt-4">
           <button onClick={onClose} className="bg-gray-300 px-4 py-2 rounded mr-2">Cancel</button>
           <button onClick={onConfirm} className="bg-red-500 text-white px-4 py-2 rounded">Delete</button>
@@ -30,7 +30,7 @@ const EditModal = ({ isOpen, onClose, lessonName, subjectImageUrl, onLessonNameC
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
       <div className="bg-white rounded shadow-lg p-6 w-1/3">
-        <h3 className="text-lg font-semibold">Edit Lesson</h3>
+        <h3 className="text-lg font-semibold">Edit Subject</h3>
         
         {/* Lesson Name Input */}
         <div>
@@ -81,8 +81,9 @@ const LessonList = () => {
   const [lessonName, setLessonName] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false); 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [lessonToDelete, setLessonToDelete] = useState(null); 
+  const [modalMessage, setModalMessage] = useState('');
   const [subjectImageUrl, setSubjectImageUrl] = useState('');
+  const [deleteMode, setDeleteMode] = useState(null); 
 
   const grades = Array.from({ length: 13 }, (_, i) => `Grade ${i + 1}`);
 
@@ -117,59 +118,45 @@ const LessonList = () => {
     fetchLessons();
   }, [fetchLessons]);
 
-  const handleEdit = (lesson) => {
-    setEditingLesson(lesson);
-    setLessonName(lesson); 
-    setSubjectImageFile(null);
+  const handleEdit = () => {
+    setEditingLesson(subject);
     setIsEditModalOpen(true);
   };
 
-  const handleDelete = (lesson) => {
-    setLessonToDelete(lesson); 
+  const handleDeleteLesson = (lesson) => {
+    setLessonName(lesson); 
+    setDeleteMode('lesson');
+    setModalMessage(`Are you sure you want to delete the lesson "${lesson}"?`);
     setIsModalOpen(true); 
   };
 
   const handleDeleteSubject = () => {
+    setDeleteMode('subject');
+    setModalMessage(`Are you sure you want to delete the entire subject "${subject}"?`);
     setIsModalOpen(true); 
   };
 
-  const confirmDeleteLesson = async () => {
-    if (!lessonToDelete) return;
-
+  const confirmDelete = async () => {
     try {
-      const updatedLessons = lessons.filter(lesson => lesson !== lessonToDelete);
       const docRef = doc(collection(db, grade), subject);
-
-      await updateDoc(docRef, {
-        lessonList: updatedLessons 
-      });
-
-      setLessons(updatedLessons);
-      setIsModalOpen(false); 
-      setLessonToDelete(null); 
+      if (deleteMode === 'lesson' && lessonName) {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const updatedLessons = data.lessonList.filter(lesson => lesson !== lessonName);
+          await updateDoc(docRef, { lessonList: updatedLessons });
+          setLessons(updatedLessons);
+        }
+      } else if (deleteMode === 'subject') {
+        await deleteDoc(docRef);
+        setLessons([]);
+        setSubjectImageUrl('');
+        setSubject('');
+      }
+      setIsModalOpen(false);
+      setLessonName('');
     } catch (error) {
-      console.error('Error deleting lesson: ', error);
-    }
-  };
-
-  const confirmDeleteSubject = async () => {
-    if (!grade || !subject) return;
-
-    try {
-      const subjectRef = doc(collection(db, grade), subject);
-      await deleteDoc(subjectRef);  
-
-      // Update state to remove the subject from the list
-      setSubjects(subjects.filter(s => s !== subject)); 
-      
-      // Clear current selections
-      setSubject('');
-      setLessons([]);
-      setSubjectImageUrl('');
-      
-      setIsModalOpen(false);  
-    } catch (error) {
-      console.error('Error deleting subject: ', error);
+      console.error(`Error deleting ${deleteMode}: `, error);
     }
   };
 
@@ -186,7 +173,6 @@ const LessonList = () => {
         updatedImageUrl = await getDownloadURL(snapshot.ref);
       }
 
-      updatedLessons = updatedLessons.map(lesson => lesson === editingLesson ? lessonName : lesson);
       const docRef = doc(collection(db, grade), subject);
       await updateDoc(docRef, {
         lessonList: updatedLessons,
@@ -236,7 +222,6 @@ const LessonList = () => {
             onChange={(e) => setSubject(e.target.value)}
             value={subject}
             className="mt-1 p-2 block w-full border border-gray-300 rounded"
-            disabled={!subjects.length}
           >
             <option value="">Select Subject</option>
             {subjects.map((subject) => (
@@ -245,42 +230,34 @@ const LessonList = () => {
           </select>
         </div>
 
-        {/* Lessons List */}
+        {/* Lesson List */}
         <div className="mt-4">
-          <h3 className="text-lg font-semibold">Lessons</h3>
-          <ul>
-            {lessons.map((lesson) => (
-              <li key={lesson} className="flex justify-between items-center py-2">
-                <div className="mt-2">
-                  <img src={subjectImageUrl} alt="Current Subject" className="max-w-12 h-12 rounded shadow mb-2" />
-                </div>
-                <span className='font-medium'>{lesson}</span>
-                <div>
-                  <button onClick={() => handleEdit(lesson)} className="bg-blue-500 text-white px-2 py-1 rounded">Edit</button>
-                  <button onClick={() => handleDelete(lesson)} className="bg-red-500 text-white px-2 py-1 rounded ml-2">Delete</button>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <h3 className="text-2xl font-semibold">Lessons:</h3>
+          {lessons.map((lesson) => (
+            <div key={lesson} className="flex items-center justify-between p-2 bg-gray-100 rounded mb-2">
+              <span>{lesson}</span>
+              <div>  
+                <button onClick={handleEdit} className="bg-blue-500 text-white px-4 py-2 rounded mr-4">Edit Subject</button>
+                <button onClick={() => handleDeleteLesson(lesson)} className="bg-red-500 text-white px-2 py-1 rounded">Delete Lesson</button>
+              </div>
+            </div>
+          ))}
         </div>
 
-        {/* Delete Subject Button */}
+        {/* Edit and Delete Subject Buttons */}
         {grade && subject && (
           <div className="mt-4">
-            <button  className="bg-blue-500 text-white px-4 py-2 rounded">Edit Subject</button>
-            <button onClick={handleDeleteSubject} className="bg-red-500 text-white px-4 py-2 rounded ml-2">Delete Subject</button>
+            <button onClick={handleDeleteSubject} className="bg-red-500 text-white px-4 py-2 rounded">Delete Subject</button>
           </div>
         )}
 
-        {/* Delete Confirmation Modal */}
+        {/* Modals */}
         <Modal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          onConfirm={lessonToDelete ? confirmDeleteLesson : confirmDeleteSubject}
-          lessonName={lessonToDelete ? lessonToDelete : `the subject "${subject}"`}
+          onConfirm={confirmDelete}
+          message={modalMessage}
         />
-
-        {/* Edit Modal */}
         <EditModal
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}

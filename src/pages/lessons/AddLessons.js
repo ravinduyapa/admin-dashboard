@@ -1,3 +1,4 @@
+// AddLessons.js
 import React, { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -12,17 +13,12 @@ const AddLessons = () => {
   const [subjectImageFile, setSubjectImageFile] = useState(null);
   const [subjects, setSubjects] = useState([]); 
 
-  // Fetch subjects based on the selected grade
   const fetchSubjects = async (grade) => {
     try {
       const q = query(collection(db, 'subjects'), where('grade', '==', grade));
       const querySnapshot = await getDocs(q);
-
       const subjectsList = [];
-      querySnapshot.forEach((doc) => {
-        subjectsList.push(doc.data().subjectName); 
-      });
-
+      querySnapshot.forEach((doc) => subjectsList.push(doc.data().subjectName)); 
       setSubjects(subjectsList);
     } catch (error) {
       console.error('Error fetching subjects: ', error);
@@ -43,23 +39,14 @@ const AddLessons = () => {
     onSubmit: async (values, { resetForm }) => {
       try {
         let subjectImageUrl = '';
-
         const docRef = doc(collection(db, values.grade), values.subject);
         const docSnap = await getDoc(docRef);
-        let existingLessonList = [];
-        let subjectImageExists = false;
-
-        if (docSnap.exists()) {
-          existingLessonList = docSnap.data().lessonList || [];
-          subjectImageExists = docSnap.data().subjectImage ? true : false;
-        }
-
-        if (subjectImageFile && !subjectImageExists) {
+        let existingLessonList = docSnap.exists() ? docSnap.data().lessonList || [] : [];
+        
+        if (subjectImageFile) {
           const subjectImageRef = ref(storage, `subjects/${subjectImageFile.name}`);
           const snapshot = await uploadBytes(subjectImageRef, subjectImageFile);
           subjectImageUrl = await getDownloadURL(snapshot.ref);
-        } else if (subjectImageExists) {
-          subjectImageUrl = docSnap.data().subjectImage;
         }
 
         existingLessonList.push(values.lessonName);
@@ -80,12 +67,8 @@ const AddLessons = () => {
     },
   });
 
-  const grades = Array.from({ length: 13 }, (_, i) => `Grade ${i + 1}`);
-
   useEffect(() => {
-    if (formik.values.grade) {
-      fetchSubjects(formik.values.grade); 
-    }
+    if (formik.values.grade) fetchSubjects(formik.values.grade);
   }, [formik.values.grade]);
 
   return (
@@ -94,7 +77,6 @@ const AddLessons = () => {
       <section className="flex-1 p-10">
         <h2 className="text-4xl font-semibold mb-6">Add Lesson Name</h2>
         <form onSubmit={formik.handleSubmit} className="space-y-4">
-          {/* Select Grade */}
           <div>
             <label htmlFor="grade" className="block text-sm font-medium">Grade</label>
             <select
@@ -106,7 +88,7 @@ const AddLessons = () => {
               className="mt-1 p-2 block w-full border border-gray-300 rounded"
             >
               <option value="">Select Grade</option>
-              {grades.map((grade) => (
+              {Array.from({ length: 13 }, (_, i) => `Grade ${i + 1}`).map((grade) => (
                 <option key={grade} value={grade}>{grade}</option>
               ))}
             </select>
@@ -114,8 +96,6 @@ const AddLessons = () => {
               <div className="text-red-600 text-sm">{formik.errors.grade}</div>
             ) : null}
           </div>
-
-          {/* Subject Input (Dropdown) */}
           <div>
             <label htmlFor="subject" className="block text-sm font-medium">Subject</label>
             <select
@@ -125,7 +105,7 @@ const AddLessons = () => {
               onBlur={formik.handleBlur}
               value={formik.values.subject}
               className="mt-1 p-2 block w-full border border-gray-300 rounded"
-              disabled={!formik.values.grade} // Disable if no grade is selected
+              disabled={!formik.values.grade}
             >
               <option value="">Select Subject</option>
               {subjects.map((subject) => (
@@ -136,8 +116,6 @@ const AddLessons = () => {
               <div className="text-red-600 text-sm">{formik.errors.subject}</div>
             ) : null}
           </div>
-
-          {/* Subject Image Upload */}
           <div>
             <label htmlFor="subjectImage" className="block text-sm font-medium">Subject Image</label>
             <input
@@ -145,14 +123,10 @@ const AddLessons = () => {
               name="subjectImage"
               type="file"
               accept="image/*"
-              onChange={(event) => {
-                setSubjectImageFile(event.currentTarget.files[0]);
-              }}
+              onChange={(event) => setSubjectImageFile(event.currentTarget.files[0])}
               className="mt-1 p-2 block w-full border border-gray-300 rounded"
             />
           </div>
-
-          {/* Lesson Name */}
           <div>
             <label htmlFor="lessonName" className="block text-sm font-medium">Lesson Name</label>
             <input
@@ -168,8 +142,6 @@ const AddLessons = () => {
               <div className="text-red-600 text-sm">{formik.errors.lessonName}</div>
             ) : null}
           </div>
-
-          {/* Submit Button */}
           <button
             type="submit"
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
