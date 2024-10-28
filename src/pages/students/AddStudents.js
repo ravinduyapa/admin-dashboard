@@ -79,7 +79,7 @@ const AddStudents = () => {
           district: values.district,
           school: values.school,
           password: values.password,
-          email: email, 
+          phoneNumber: values.phoneNumber, 
         });
 
         toast.success('Student added successfully!');

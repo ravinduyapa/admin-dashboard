@@ -6,7 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import Sidebar from '../../components/Sidebar';
 import { collection, doc, setDoc } from 'firebase/firestore'; 
 import { db } from '../../auth/Firebase'; 
-import { createUserWithEmailAndPassword ,getAuth} from 'firebase/auth';
+import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
 
 const AddTeachers = () => {
   const auth = getAuth(); 
@@ -26,6 +26,7 @@ const AddTeachers = () => {
     
     fetchDistricts();
   }, []);
+
   const formik = useFormik({
     initialValues: {
       firstName: '',
@@ -68,7 +69,10 @@ const AddTeachers = () => {
       try {
         const email = `${values.phoneNumber}@example.com`; 
         
+        // Create user in Firebase Authentication
         await createUserWithEmailAndPassword(auth, email, values.password);
+        
+        // Prepare the document data
         const teacherDoc = doc(collection(db, 'Teacher'), values.phoneNumber);
         await setDoc(teacherDoc, {
           firstName: values.firstName,
@@ -76,8 +80,8 @@ const AddTeachers = () => {
           birth: values.birth,
           school: values.school,
           district: values.district,
-          password: values.password, 
-          email: email, 
+          password: values.password,
+          phoneNumber: values.phoneNumber, 
         });
         
         toast.success('Teacher added successfully!');
