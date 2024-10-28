@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
 import { collection, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../auth/Firebase';
-import { getAuth, deleteUser, signInWithEmailAndPassword } from 'firebase/auth';
-
+import { getAuth, deleteUser, signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 
 const StudentList = () => {
   const [students, setStudents] = useState([]);
@@ -16,6 +15,7 @@ const StudentList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
   const [districts, setDistricts] = useState([]);
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(false); 
 
   useEffect(() => {
     const fetchDistricts = async () => {
@@ -44,7 +44,7 @@ const StudentList = () => {
         'Ratnapura',
         'Trincomalee',
         'Vavuniya'
-    ];    
+      ];    
       setDistricts(districtList);
     };
     
@@ -55,17 +55,25 @@ const StudentList = () => {
     fetchStudents();
   }, []);
 
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsUserLoggedIn(!!user); 
+    });
+
+    return () => unsubscribe(); 
+  }, []);
+
   const fetchStudents = async () => {
     const querySnapshot = await getDocs(collection(db, 'Student'));
-    const studentsData = querySnapshot.docs.map((doc) => {
-      return {
-        id: doc.id,
-        ...doc.data(),
-      };
-    });
+    const studentsData = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
     setStudents(studentsData);
     setFilteredStudents(studentsData);
   };
+
   const handleSearchChange = (event) => {
     const value = event.target.value;
     setSearchTerm(value);
@@ -104,8 +112,20 @@ const StudentList = () => {
 
   const handleDeleteConfirm = async () => {
     if (studentToDelete) {
+      if (isUserLoggedIn) {
+        try {
+          const auth = getAuth();
+          const user = auth.currentUser;
+          await auth.signOut();
+          console.log(`${user.email} has been signed out.`);
+        } catch (error) {
+          console.error('Error signing out:', error);
+        }
+      }
+
+      // Proceed to delete the student
       try {
-        const email = `${studentToDelete.id}@example.com`;
+        const email = `${studentToDelete.id}@example.com`; 
         await deleteAuthUser(email, studentToDelete.password);
         await deleteDoc(doc(db, 'Student', studentToDelete.id));
         fetchStudents();
@@ -116,7 +136,6 @@ const StudentList = () => {
       }
     }
   };
-  
 
   const handleUpdate = async (event) => {
     event.preventDefault();
@@ -196,13 +215,13 @@ const StudentList = () => {
                   <td className="px-6 py-4 border-b">
                     <button
                       onClick={() => handleEditClick(student)}
-                      className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-2"
+                      className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded mr-2"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDeleteClick(student)}
-                      className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+                      className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
                     >
                       Delete
                     </button>
@@ -213,9 +232,8 @@ const StudentList = () => {
           </table>
         </div>
 
-        {/* Pagination Controls */}
         {totalPages > 1 && (
-          <div className="flex justify-between mt-4">
+          <div className="flex justify-between items-center mt-4">
             <button
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
@@ -223,7 +241,7 @@ const StudentList = () => {
             >
               Previous
             </button>
-            <span className="self-center">Page {currentPage} of {totalPages}</span>
+            <span>Page {currentPage} of {totalPages}</span>
             <button
               onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
@@ -233,119 +251,115 @@ const StudentList = () => {
             </button>
           </div>
         )}
+
+        {isDeleteModalOpen && (
+          <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+              <h2 className="text-xl font-semibold mb-4">Confirm Delete</h2>
+              <p>Are you sure you want to delete this student?</p>
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded mr-2"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteConfirm}
+                  className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Modal */}
+        {isModalOpen && (
+          <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75">
+            <form
+              onSubmit={handleUpdate}
+              className="bg-white rounded-lg p-6 w-full max-w-md"
+            >
+              <h2 className="text-xl font-semibold mb-4">Edit Student</h2>
+              <div className="mb-4">
+                <label className="block text-gray-700">First Name</label>
+                <input
+                  type="text"
+                  name="firstName"
+                  value={selectedStudent?.firstName || ''}
+                  onChange={handleInputChange}
+                  className="border border-gray-300 p-2 rounded w-full"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700">Last Name</label>
+                <input
+                  type="text"
+                  name="lastName"
+                  value={selectedStudent?.lastName || ''}
+                  onChange={handleInputChange}
+                  className="border border-gray-300 p-2 rounded w-full"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700">Birthdate</label>
+                <input
+                  type="date"
+                  name="birth"
+                  value={selectedStudent?.birth || ''}
+                  onChange={handleInputChange}
+                  className="border border-gray-300 p-2 rounded w-full"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700">School</label>
+                <input
+                  type="text"
+                  name="school"
+                  value={selectedStudent?.school || ''}
+                  onChange={handleInputChange}
+                  className="border border-gray-300 p-2 rounded w-full"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700">District</label>
+                <select
+                  name="district"
+                  value={selectedStudent?.district || ''}
+                  onChange={handleInputChange}
+                  className="border border-gray-300 p-2 rounded w-full"
+                  required
+                >
+                  {districts.map((district) => (
+                    <option key={district} value={district}>{district}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex justify-end mt-6">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded mr-2"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                >
+                  Save
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
       </section>
-
-      {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4">Edit Student</h2>
-            <div className="mb-4">
-              <label className="block text-gray-700 font-bold mb-2">First Name</label>
-              <input
-                type="text"
-                name="firstName"
-                value={selectedStudent.firstName}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 font-bold mb-2">Last Name</label>
-              <input
-                type="text"
-                name="lastName"
-                value={selectedStudent.lastName}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 font-bold mb-2">Birth Date</label>
-              <input
-                type="date"
-                name="birth"
-                value={selectedStudent.birth}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 font-bold mb-2">Phone Number</label>
-              <input
-                type="text"
-                name="phoneNumber"
-                value={selectedStudent.id}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 font-bold mb-2">School</label>
-              <input
-                type="text"
-                name="school"
-                value={selectedStudent.school}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 font-bold mb-2">District</label>
-               <select
-                type="text"
-                name="district"
-                value={selectedStudent.district}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm"
-              >
-                <option value="" label="Select district" />
-                {districts.map((district, index) => (
-                  <option key={index} value={district}>
-                    {district}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex justify-end">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded mr-2"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUpdate}
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              >
-                Update
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4">Confirm Delete</h2>
-            <p>Are you sure you want to delete this student?</p>
-            <div className="flex justify-end mt-6">
-              <button
-                onClick={() => setIsDeleteModalOpen(false)}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded mr-2"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteConfirm}
-                className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 };
