@@ -13,6 +13,7 @@ import LessonsList from './pages/lessons/LessonsList';
 import AddSubjects from './pages/subjects/AddSubjects';
 import PrivateRoute from './auth/PrivateRoute '; 
 import SubjectList from './pages/subjects/SubjectList';
+import AddGrade from './pages/grades/AddGrade';
 
 function App() {
   return (
@@ -89,6 +90,14 @@ function App() {
           element={
             <PrivateRoute>
               <SubjectList />
+            </PrivateRoute>
+          }
+        />
+         <Route
+          path="/add-grade"
+          element={
+            <PrivateRoute>
+              <AddGrade />
             </PrivateRoute>
           }
         />

@@ -33,6 +33,7 @@ function Sidebar() {
     { name: "Add Lessons", icon: MdNoteAdd, path: "/add-lessons" },
     { name: "Lessons List", icon: MdEditNote, path: "/lessons-list" },
     { name: "Add Subject", icon: MdSubject, path: "/add-subjects" },
+    { name: "Add Grade", icon: MdSubject, path: "/add-grade" },
   ];
 
   const location = useLocation();
@@ -86,7 +87,7 @@ function Sidebar() {
           
         )}
 
-        <div id="navLinks-box" className="flex flex-col justify-center items-start gap-3 w-full mt-3"> 
+        <div id="navLinks-box" className="flex flex-col justify-center items-start gap-2 w-full "> 
           {navItems.map((item) => (
             <Link
               to={item.path}

@@ -1,4 +1,3 @@
-// AddLessons.js
 import React, { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -38,23 +37,31 @@ const AddLessons = () => {
     }),
     onSubmit: async (values, { resetForm }) => {
       try {
-        let subjectImageUrl = '';
         const docRef = doc(collection(db, values.grade), values.subject);
         const docSnap = await getDoc(docRef);
         let existingLessonList = docSnap.exists() ? docSnap.data().lessonList || [] : [];
-        
-        if (subjectImageFile) {
+        let subjectImageUrl = docSnap.exists() ? docSnap.data().subjectImage : '';
+
+        // Check if it's the first lesson for this subject
+        if (!docSnap.exists()) {
+          if (!subjectImageFile) {
+            toast.error('Subject image is required for the first lesson.');
+            return;
+          }
+          
+          // Upload the subject image
           const subjectImageRef = ref(storage, `subjects/${subjectImageFile.name}`);
           const snapshot = await uploadBytes(subjectImageRef, subjectImageFile);
           subjectImageUrl = await getDownloadURL(snapshot.ref);
         }
 
+        // Add the new lesson to the existing lesson list
         existingLessonList.push(values.lessonName);
 
         await setDoc(docRef, {
           lessonList: existingLessonList,
           subjectName: values.subject,
-          subjectImage: subjectImageUrl,
+          subjectImage: subjectImageUrl, 
         }, { merge: true });
 
         toast.success('Lesson added successfully!');

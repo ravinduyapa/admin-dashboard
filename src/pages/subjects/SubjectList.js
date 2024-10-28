@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../auth/Firebase';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -8,9 +8,6 @@ import { useNavigate } from 'react-router-dom';
 
 const SubjectList = () => {
   const [subjects, setSubjects] = useState([]);
-  const [editingSubject, setEditingSubject] = useState(null);
-  const [newSubjectName, setNewSubjectName] = useState('');
-  const [newGrade, setNewGrade] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [filterGrade, setFilterGrade] = useState(''); 
   const [deleteSubjectId, setDeleteSubjectId] = useState(null);
@@ -36,31 +33,6 @@ const SubjectList = () => {
 
     fetchSubjects();
   }, []);
-
-  // Handle editing a subject
-  const handleEdit = (subject) => {
-    setEditingSubject(subject);
-    setNewSubjectName(subject.subjectName);
-    setNewGrade(subject.grade);
-  };
-
-  const handleSave = async () => {
-    try {
-      const docRef = doc(db, 'subjects', editingSubject.id);
-      await updateDoc(docRef, {
-        subjectName: newSubjectName,
-        grade: newGrade
-      });
-      toast.success('Subject updated successfully!');
-      setEditingSubject(null);
-      setSubjects(subjects.map(sub =>
-        sub.id === editingSubject.id ? { ...sub, subjectName: newSubjectName, grade: newGrade } : sub
-      ));
-    } catch (error) {
-      console.error('Error updating subject: ', error);
-      toast.error('Failed to update subject.');
-    }
-  };
 
   // Handle deleting a subject
   const handleDelete = async () => {
@@ -108,21 +80,21 @@ const SubjectList = () => {
           </button>
         </div>
 
-       {/* Filter by Grade Input */}
+        {/* Filter by Grade Input */}
         <div className="mb-4">
-            <select
-                value={filterGrade}
-                onChange={(e) => {
-                setFilterGrade(e.target.value);
-                setCurrentPage(1); 
-                }}
-                className="border p-2 rounded bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-                <option value="">All Grades</option>
-                {grades.map((grade) => (
-                <option key={grade} value={grade}>{grade}</option>
-                ))}
-            </select>
+          <select
+            value={filterGrade}
+            onChange={(e) => {
+              setFilterGrade(e.target.value);
+              setCurrentPage(1); 
+            }}
+            className="border p-2 rounded bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">All Grades</option>
+            {grades.map((grade) => (
+              <option key={grade} value={grade}>{grade}</option>
+            ))}
+          </select>
         </div>
 
         <table className="min-w-full bg-white border border-gray-200">
@@ -133,53 +105,22 @@ const SubjectList = () => {
               <th className="border-b p-2 text-center">Actions</th>
             </tr>
           </thead>
-            <tbody>
-                {currentSubjects.map((subject, index) => (
-                    <tr key={subject.id} className={index % 2 === 0 ? 'bg-gray-100' : 'bg-gray-50'}>
-                    <td className="border p-2 text-center">
-                        {editingSubject?.id === subject.id ? (
-                        <select
-                            value={newGrade}
-                            onChange={(e) => setNewGrade(e.target.value)}
-                            className="border p-1 rounded"
-                        >
-                            <option value="">Select Grade</option>
-                            {grades.map(grade => (
-                            <option key={grade} value={grade}>{grade}</option>
-                            ))}
-                        </select>
-                        ) : (
-                        subject.grade
-                        )}
-                    </td>
-                    <td className="border p-2 text-center">
-                        {editingSubject?.id === subject.id ? (
-                        <input 
-                            type="text" 
-                            value={newSubjectName} 
-                            onChange={(e) => setNewSubjectName(e.target.value)} 
-                            className="border p-1 rounded"
-                        />
-                        ) : (
-                        subject.subjectName
-                        )}
-                    </td>
-                    <td className="border p-2 text-center">
-                        {editingSubject?.id === subject.id ? (
-                        <>
-                            <button onClick={handleSave} className="bg-green-500 text-white px-2 py-1 rounded mr-2">Save</button>
-                            <button onClick={() => setEditingSubject(null)} className="bg-gray-500 text-white px-2 py-1 rounded">Cancel</button>
-                        </>
-                        ) : (
-                        <>
-                            <button onClick={() => handleEdit(subject)} className="bg-blue-500 text-white px-2 py-1 rounded mr-2">Edit</button>
-                            <button onClick={() => setDeleteSubjectId(subject.id)} className="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
-                        </>
-                        )}
-                    </td>
-                    </tr>
-                ))}
-            </tbody>
+          <tbody>
+            {currentSubjects.map((subject, index) => (
+              <tr key={subject.id} className={index % 2 === 0 ? 'bg-gray-100' : 'bg-gray-50'}>
+                <td className="border p-2 text-center">{subject.grade}</td>
+                <td className="border p-2 text-center">{subject.subjectName}</td>
+                <td className="border p-2 text-center">
+                  <button 
+                    onClick={() => setDeleteSubjectId(subject.id)} 
+                    className="bg-red-500 text-white px-2 py-1 rounded"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
         </table>
         
         {/* Pagination Controls */}
