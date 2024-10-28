@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { collection, doc, getDoc, updateDoc, getDocs, deleteDoc } from 'firebase/firestore'; 
+import { collection, doc, getDoc, updateDoc, getDocs, deleteDoc, setDoc } from 'firebase/firestore'; 
 import { db } from '../../auth/Firebase'; 
 import Sidebar from '../../components/Sidebar';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; 
@@ -70,6 +70,37 @@ const EditModal = ({ isOpen, onClose, lessonName, subjectImageUrl, onLessonNameC
   );
 };
 
+// EditSubjectModal Component for Editing Subject
+const EditSubjectModal = ({ isOpen, onClose, subjectName, onSubjectNameChange, onUpdate }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+      <div className="bg-white rounded shadow-lg p-6 w-1/3">
+        <h3 className="text-lg font-semibold">Edit Subject</h3>
+        
+        {/* Subject Name Input */}
+        <div>
+          <label htmlFor="subjectName" className="block text-sm font-medium">Subject Name</label>
+          <input
+            id="subjectName"
+            name="subjectName"
+            type="text"
+            value={subjectName}
+            onChange={onSubjectNameChange}
+            className="mt-1 p-2 block w-full border border-gray-300 rounded"
+          />
+        </div>
+
+        <div className="flex justify-end mt-4">
+          <button onClick={onClose} className="bg-gray-300 px-4 py-2 rounded mr-2">Cancel</button>
+          <button onClick={onUpdate} className="bg-blue-500 text-white px-4 py-2 rounded">Update</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // LessonList Component
 const LessonList = () => {
   const [grade, setGrade] = useState('');
@@ -83,6 +114,8 @@ const LessonList = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [lessonToDelete, setLessonToDelete] = useState(null); 
   const [subjectImageUrl, setSubjectImageUrl] = useState('');
+  const [isEditSubjectModalOpen, setIsEditSubjectModalOpen] = useState(false);
+  const [newSubjectName, setNewSubjectName] = useState('');
 
   const grades = Array.from({ length: 13 }, (_, i) => `Grade ${i + 1}`);
 
@@ -124,6 +157,11 @@ const LessonList = () => {
     setIsEditModalOpen(true);
   };
 
+  const handleEditSubject = () => {
+    setNewSubjectName(subject);
+    setIsEditSubjectModalOpen(true);
+  };
+
   const handleDelete = (lesson) => {
     setLessonToDelete(lesson); 
     setIsModalOpen(true); 
@@ -162,7 +200,6 @@ const LessonList = () => {
       // Update state to remove the subject from the list
       setSubjects(subjects.filter(s => s !== subject)); 
       
-      // Clear current selections
       setSubject('');
       setLessons([]);
       setSubjectImageUrl('');
@@ -203,6 +240,34 @@ const LessonList = () => {
       console.error('Error updating lesson: ', error);
     }
   };
+
+  const updateSubjectName = async () => {
+    if (!subject || !newSubjectName) return;
+
+    try {
+      const subjectRef = doc(collection(db, grade), subject);
+      const subjectSnap = await getDoc(subjectRef);
+
+      if (subjectSnap.exists()) {
+        const subjectData = subjectSnap.data();
+
+        // Create a new document with the new subject name
+        const newSubjectRef = doc(collection(db, grade), newSubjectName);
+        await setDoc(newSubjectRef, { ...subjectData, id: newSubjectName });
+
+        // Delete the old document
+        await deleteDoc(subjectRef);
+
+        // Update state to reflect the new subject name
+        setSubjects(subjects.map(s => (s === subject ? newSubjectName : s)));
+        setSubject(newSubjectName); 
+        setIsEditSubjectModalOpen(false);
+      }
+    } catch (error) {
+      console.error('Error updating subject: ', error);
+    }
+  };
+
 
   return (
     <section className="w-full flex h-screen">
@@ -267,7 +332,7 @@ const LessonList = () => {
         {/* Delete Subject Button */}
         {grade && subject && (
           <div className="mt-4">
-            <button  className="bg-blue-500 text-white px-4 py-2 rounded">Edit Subject</button>
+            <button onClick={handleEditSubject} className="bg-blue-500 text-white px-4 py-2 rounded">Edit Subject</button>
             <button onClick={handleDeleteSubject} className="bg-red-500 text-white px-4 py-2 rounded ml-2">Delete Subject</button>
           </div>
         )}
@@ -289,6 +354,15 @@ const LessonList = () => {
           onLessonNameChange={(e) => setLessonName(e.target.value)}
           onImageChange={(e) => setSubjectImageFile(e.target.files[0])}
           onUpdate={handleUpdate}
+        />
+
+        {/* Edit Subject Modal */}
+        <EditSubjectModal
+          isOpen={isEditSubjectModalOpen}
+          onClose={() => setIsEditSubjectModalOpen(false)}
+          subjectName={newSubjectName}
+          onSubjectNameChange={(e) => setNewSubjectName(e.target.value)}
+          onUpdate={updateSubjectName}
         />
       </section>
     </section>
