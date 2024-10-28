@@ -15,12 +15,31 @@ const AddStudents = () => {
   useEffect(() => {
     const fetchDistricts = async () => {
       const districtList = [
+        'Ampara',
+        'Anuradhapura',
+        'Badulla',
+        'Batticaloa',
         'Colombo',
+        'Galle',
         'Gampaha',
-        'Kandy',
-        'Matara',
+        'Hambantota',
         'Jaffna',
-      ];
+        'Kalutara',
+        'Kandy',
+        'Kegalle',
+        'Kilinochchi',
+        'Kurunegala',
+        'Mannar',
+        'Matale',
+        'Matara',
+        'Moneragala',
+        'Nuwara Eliya',
+        'Polonnaruwa',
+        'Puttalam',
+        'Ratnapura',
+        'Trincomalee',
+        'Vavuniya'
+    ];    
       setDistricts(districtList);
     };
     
