@@ -10,7 +10,7 @@ import { PiUserListLight } from "react-icons/pi";
 import { MdEditNote } from "react-icons/md"
 import { MdNoteAdd } from "react-icons/md";
 import { MdSubject } from "react-icons/md";
-
+import { MdOutlineAddBox } from "react-icons/md";
 
 function Sidebar() {
   const navigate = useNavigate();
@@ -33,7 +33,7 @@ function Sidebar() {
     { name: "Add Lessons", icon: MdNoteAdd, path: "/add-lessons" },
     { name: "Lessons List", icon: MdEditNote, path: "/lessons-list" },
     { name: "Add Subject", icon: MdSubject, path: "/add-subjects" },
-    { name: "Add Grade", icon: MdSubject, path: "/add-grade" },
+    { name: "Add Grade", icon: MdOutlineAddBox, path: "/add-grade" },
   ];
 
   const location = useLocation();

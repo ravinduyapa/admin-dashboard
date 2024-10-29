@@ -14,6 +14,7 @@ import AddSubjects from './pages/subjects/AddSubjects';
 import PrivateRoute from './auth/PrivateRoute '; 
 import SubjectList from './pages/subjects/SubjectList';
 import AddGrade from './pages/grades/AddGrade';
+import GradeList from './pages/grades/GradeList';
 
 function App() {
   return (
@@ -98,6 +99,14 @@ function App() {
           element={
             <PrivateRoute>
               <AddGrade />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/grades-list"
+          element={
+            <PrivateRoute>
+              <GradeList />
             </PrivateRoute>
           }
         />

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Sidebar from '../../components/Sidebar'; 
 import { storage } from '../../auth/Firebase'; 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db } from '../../auth/Firebase'; // Ensure Firestore is imported
-import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore'; // Import Firestore functions
+import { db } from '../../auth/Firebase'; 
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore'; 
 
 const AddGrade = () => {
   const [grade, setGrade] = useState('');
@@ -22,27 +23,23 @@ const AddGrade = () => {
       newErrors.stream = 'Stream is required when Grade 12 is selected';
     }
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0; // Return true if no errors
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!validate()) {
-      return; // If validation fails, do not submit
+      return;
     }
 
     try {
-      // Format the document ID as "Grade 1", "Grade 2", etc.
       const gradeDocId = `Grade ${grade}`;
-
-      // Check if the document already exists
       const docRef = doc(db, 'Grades', gradeDocId);
       const docSnap = await getDoc(docRef);
 
       let gradeImageUrl = '';
 
-      // Upload image to Firebase Storage and get the URL
       if (gradeImageFile) {
         const gradeImageRef = ref(storage, `grades/${gradeImageFile.name}`);
         const snapshot = await uploadBytes(gradeImageRef, gradeImageFile);
@@ -50,36 +47,30 @@ const AddGrade = () => {
       }
 
       if (docSnap.exists()) {
-        // Document exists, update the streams for this grade
         const existingData = docSnap.data();
         
-        // Check if the stream already exists
         if (existingData.streams && existingData.streams.includes(stream)) {
           toast.error('This stream already exists for the selected grade.');
-          return; // Prevent adding the same stream
+          return;
         }
 
-        // Update the document to add the new stream
         await updateDoc(docRef, {
           streams: existingData.streams ? [...existingData.streams, stream] : [stream],
         });
 
         toast.success('Stream added successfully to existing grade!');
       } else {
-        // Save the grade image URL to Firestore in the Years collection
         await setDoc(doc(db, 'Years', gradeDocId), {
-          gradeImg: gradeImageUrl, // Save image path in Years collection
+          gradeImg: gradeImageUrl,
         });
 
-        // Save the grade and stream in the Grades collection
         await setDoc(docRef, {
-          streams: grade === '12' ? [stream] : [], // Initialize streams array if grade is 12
+          streams: grade === '12' ? [stream] : [],
         });
 
         toast.success('Grade added successfully!');
       }
 
-      // Reset form
       setGrade('');
       setStream('');
       setGradeImageFile(null);
@@ -94,7 +85,12 @@ const AddGrade = () => {
     <section className="w-full flex h-screen">
       <Sidebar />
       <section className="flex-1 p-10">
-        <h2 className="text-4xl font-semibold mb-6">Add Grade</h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-4xl font-semibold">Add Grade</h2>
+          <Link to="/grades-list" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+            Grades List
+          </Link>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="grade" className="block text-sm font-medium">Grade</label>
@@ -104,7 +100,7 @@ const AddGrade = () => {
               onChange={(e) => {
                 setGrade(e.target.value);
                 if (e.target.value !== '12') {
-                  setStream(''); // Clear stream if not Grade 12
+                  setStream('');
                 }
               }}
               className="mt-1 p-2 block w-full border border-gray-300 rounded"
