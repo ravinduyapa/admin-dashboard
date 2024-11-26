@@ -122,11 +122,11 @@ const AddGrade = () => {
                 className="mt-1 p-2 block w-full border border-gray-300 rounded"
               >
                 <option value="">Select Stream</option>
-                <option value="Physical Science">Physical Science</option>
-                <option value="Bio Science">Bio Science</option>
-                <option value="Commerce">Commerce</option>
-                <option value="Arts">Arts</option>
-                <option value="Technology">Technology</option>
+                <option value="PHYSICAL">Physical Science</option>
+                <option value="BIO">Bio Science</option>
+                <option value="COMMERCE">Commerce</option>
+                <option value="ARTS">Arts</option>
+                <option value="TECHNOLOGY">Technology</option>
               </select>
               {errors.stream && <div className="text-red-600 text-sm">{errors.stream}</div>}
             </div>

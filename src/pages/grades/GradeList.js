@@ -48,13 +48,13 @@ const GradeList = () => {
   const openEditModal = (grade) => {
     setSelectedGrade(grade);
     setIsEditModalOpen(true);
-    setNewImage(null); // Reset the new image when opening the modal
+    setNewImage(null); 
   };
 
   const closeEditModal = () => {
     setIsEditModalOpen(false);
     setSelectedGrade({ id: '', streams: [], gradeImg: '' });
-    setNewImage(null); // Reset to initial state
+    setNewImage(null); 
   };
 
   const openDeleteModal = (grade) => {
@@ -202,11 +202,11 @@ const GradeList = () => {
                   }
                   className="mt-1 p-2 border border-gray-300 rounded-md w-full"
                 >
-                  <option value="Physical Science">Physical Science</option>
-                  <option value="Bio Science">Bio Science</option>
-                  <option value="Commerce">Commerce</option>
-                  <option value="Arts">Arts</option>
-                  <option value="Technology">Technology</option>
+                  <option value="PHYSICAL">Physical Science</option>
+                  <option value="BIO">Bio Science</option>
+                  <option value="COMMERCE">Commerce</option>
+                  <option value="ARTS">Arts</option>
+                  <option value="TECHNOLOGY">Technology</option>
                 </select>
                 <p className="text-sm text-gray-500 mt-1">Hold Ctrl (Cmd on Mac) to select multiple options.</p>
               </div>
