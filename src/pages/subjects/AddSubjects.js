@@ -69,11 +69,11 @@ const AddSubjects = () => {
 
   const grades = Array.from({ length: 13 }, (_, i) => `Grade ${i + 1}`);
   const streams = [
-    'Physical Science',
-    'Bio Science',
-    'Commerce',
-    'Arts',
-    'Technology',
+    'PHYSICAL',
+    'BIO',
+    'COMMERCE',
+    'ARTS',
+    'TECHNOLOGY',
   ];
 
   const handleGradeChange = (e) => {
