@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -9,6 +9,24 @@ import { db } from '../../auth/Firebase';
 
 const AddSubjects = () => {
   const [isAdvancedGrade, setIsAdvancedGrade] = useState(false);
+  const [grades, setGrades] = useState([]);
+  const [streams, setStreams] = useState([]);
+
+  useEffect(() => {
+    const fetchGrades = async () => {
+      try {
+        const gradesCollectionRef = collection(db, 'Grades');
+        const querySnapshot = await getDocs(gradesCollectionRef);
+        const gradesList = querySnapshot.docs.map(doc => doc.id); // Use document IDs as grades
+        setGrades(gradesList);
+      } catch (error) {
+        console.error('Error fetching grades: ', error);
+        toast.error('Failed to fetch grades. Please try again.');
+      }
+    };
+
+    fetchGrades();
+  }, []);
 
   const formik = useFormik({
     initialValues: {
@@ -67,24 +85,23 @@ const AddSubjects = () => {
     },
   });
 
-  const grades = Array.from({ length: 13 }, (_, i) => `Grade ${i + 1}`);
-  const streams = [
-    'PHYSICAL',
-    'BIO',
-    'COMMERCE',
-    'ARTS',
-    'TECHNOLOGY',
-  ];
-
   const handleGradeChange = (e) => {
     const selectedGrade = e.target.value;
     formik.setFieldValue('grade', selectedGrade);
 
     if (selectedGrade === 'Grade 12' || selectedGrade === 'Grade 13') {
       setIsAdvancedGrade(true);
+      setStreams([
+        'PHYSICAL',
+        'BIO',
+        'COMMERCE',
+        'ARTS',
+        'TECHNOLOGY',
+      ]); // Set the available streams
     } else {
       setIsAdvancedGrade(false);
-      formik.setFieldValue('stream', ''); 
+      setStreams([]); // Reset streams for other grades
+      formik.setFieldValue('stream', ''); // Reset stream field
     }
   };
 
