@@ -17,7 +17,7 @@ const AddSubjects = () => {
       try {
         const gradesCollectionRef = collection(db, 'Grades');
         const querySnapshot = await getDocs(gradesCollectionRef);
-        const gradesList = querySnapshot.docs.map(doc => doc.id); // Use document IDs as grades
+        const gradesList = querySnapshot.docs.map(doc => doc.id); 
         setGrades(gradesList);
       } catch (error) {
         console.error('Error fetching grades: ', error);
@@ -97,11 +97,11 @@ const AddSubjects = () => {
         'COMMERCE',
         'ARTS',
         'TECHNOLOGY',
-      ]); // Set the available streams
+      ]); 
     } else {
       setIsAdvancedGrade(false);
-      setStreams([]); // Reset streams for other grades
-      formik.setFieldValue('stream', ''); // Reset stream field
+      setStreams([]); 
+      formik.setFieldValue('stream', ''); 
     }
   };
 
