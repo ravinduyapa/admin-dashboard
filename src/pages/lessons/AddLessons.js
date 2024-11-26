@@ -11,6 +11,18 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 const AddLessons = () => {
   const [subjectImageFile, setSubjectImageFile] = useState(null);
   const [subjects, setSubjects] = useState([]);
+  const [grades, setGrades] = useState([]);
+
+  // Fetch grades from Grades collection
+  const fetchGrades = async () => {
+    try {
+      const gradesSnapshot = await getDocs(collection(db, 'Grades'));
+      const gradesList = gradesSnapshot.docs.map(doc => doc.id);
+      setGrades(gradesList);
+    } catch (error) {
+      console.error('Error fetching grades: ', error);
+    }
+  };
 
   // Fetch subjects by grade
   const fetchSubjects = async (grade) => {
@@ -19,7 +31,7 @@ const AddLessons = () => {
       const querySnapshot = await getDocs(q);
       const subjectsList = querySnapshot.docs.map((doc) => {
         const data = doc.data();
-        console.log(`Subject: ${data.subjectName}, Stream: ${data.stream}`); 
+        console.log(`Subject: ${data.subjectName}, Stream: ${data.stream}`);
         return {
           subjectName: data.subjectName,
           stream: data.stream,
@@ -35,7 +47,7 @@ const AddLessons = () => {
     initialValues: {
       grade: '',
       subject: '',
-      stream: '', 
+      stream: '',
       lessonName: '',
     },
     validationSchema: Yup.object({
@@ -67,7 +79,7 @@ const AddLessons = () => {
           lessonList: existingLessonList,
           subjectName: values.subject,
           subjectImage: subjectImageUrl,
-          stream: values.stream, 
+          stream: values.stream,
         }, { merge: true });
 
         toast.success('Lesson added successfully!');
@@ -79,6 +91,10 @@ const AddLessons = () => {
       }
     },
   });
+
+  useEffect(() => {
+    fetchGrades(); 
+  }, []);
 
   useEffect(() => {
     if (formik.values.grade) fetchSubjects(formik.values.grade);
@@ -101,7 +117,7 @@ const AddLessons = () => {
               className="mt-1 p-2 block w-full border border-gray-300 rounded"
             >
               <option value="">Select Grade</option>
-              {Array.from({ length: 13 }, (_, i) => `Grade ${i + 1}`).map((grade) => (
+              {grades.map((grade) => (
                 <option key={grade} value={grade}>{grade}</option>
               ))}
             </select>
@@ -119,7 +135,7 @@ const AddLessons = () => {
                   (subject) => subject.subjectName === e.target.value
                 );
                 formik.setFieldValue('subject', selectedSubject?.subjectName || '');
-                formik.setFieldValue('stream', selectedSubject?.stream || ''); 
+                formik.setFieldValue('stream', selectedSubject?.stream || '');
               }}
               onBlur={formik.handleBlur}
               value={formik.values.subject}
