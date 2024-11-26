@@ -19,7 +19,7 @@ const AddLessons = () => {
       const querySnapshot = await getDocs(q);
       const subjectsList = querySnapshot.docs.map((doc) => {
         const data = doc.data();
-        console.log(`Subject: ${data.subjectName}, Stream: ${data.stream}`); // Log subject and stream
+        console.log(`Subject: ${data.subjectName}, Stream: ${data.stream}`); 
         return {
           subjectName: data.subjectName,
           stream: data.stream,
@@ -35,7 +35,7 @@ const AddLessons = () => {
     initialValues: {
       grade: '',
       subject: '',
-      stream: '', // Stream value selected with subject
+      stream: '', 
       lessonName: '',
     },
     validationSchema: Yup.object({
