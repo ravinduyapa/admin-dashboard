@@ -192,13 +192,23 @@ const GradeList = () => {
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700">Streams:</label>
-                <input
-                  type="text"
-                  value={selectedGrade.streams.join(', ')}
-                  onChange={(e) => setSelectedGrade({ ...selectedGrade, streams: e.target.value.split(', ') })}
+                <select
+                  value={selectedGrade.streams}
+                  onChange={(e) =>
+                    setSelectedGrade({
+                      ...selectedGrade,
+                      streams: Array.from(e.target.selectedOptions, (option) => option.value),
+                    })
+                  }
                   className="mt-1 p-2 border border-gray-300 rounded-md w-full"
-                  placeholder="Enter streams separated by commas"
-                />
+                >
+                  <option value="Physical Science">Physical Science</option>
+                  <option value="Bio Science">Bio Science</option>
+                  <option value="Commerce">Commerce</option>
+                  <option value="Arts">Arts</option>
+                  <option value="Technology">Technology</option>
+                </select>
+                <p className="text-sm text-gray-500 mt-1">Hold Ctrl (Cmd on Mac) to select multiple options.</p>
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700">Current Grade Image:</label>
