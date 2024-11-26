@@ -98,7 +98,7 @@ const GradeList = () => {
           streams: selectedGrade.streams,
           gradeImg: imageUrl,
         });
-        setSelectedGrade({ ...selectedGrade, gradeImg: imageUrl }); // Update local state with new image URL
+        setSelectedGrade({ ...selectedGrade, gradeImg: imageUrl }); 
       } else {
         await updateDoc(gradeRef, {
           streams: selectedGrade.streams,
