@@ -4,7 +4,7 @@ import Sidebar from '../../components/Sidebar';
 import { db } from '../../auth/Firebase';
 import { collection, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import Modal from 'react-modal';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'; // Import storage functions
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'; 
 
 const GradeList = () => {
   const [grades, setGrades] = useState([]);
@@ -12,7 +12,7 @@ const GradeList = () => {
   const [selectedGrade, setSelectedGrade] = useState({ id: '', streams: [], gradeImg: '' });
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [gradeToDelete, setGradeToDelete] = useState(null);
-  const [newImage, setNewImage] = useState(null); // State to hold the new image
+  const [newImage, setNewImage] = useState(null); 
 
   useEffect(() => {
     const fetchGrades = async () => {

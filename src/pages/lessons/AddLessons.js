@@ -4,20 +4,27 @@ import * as Yup from 'yup';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Sidebar from '../../components/Sidebar';
-import { collection, doc, getDoc, setDoc, query, where, getDocs } from 'firebase/firestore'; 
-import { db, storage } from '../../auth/Firebase'; 
+import { collection, doc, getDoc, setDoc, query, where, getDocs } from 'firebase/firestore';
+import { db, storage } from '../../auth/Firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const AddLessons = () => {
   const [subjectImageFile, setSubjectImageFile] = useState(null);
-  const [subjects, setSubjects] = useState([]); 
+  const [subjects, setSubjects] = useState([]);
 
+  // Fetch subjects by grade
   const fetchSubjects = async (grade) => {
     try {
       const q = query(collection(db, 'subjects'), where('grade', '==', grade));
       const querySnapshot = await getDocs(q);
-      const subjectsList = [];
-      querySnapshot.forEach((doc) => subjectsList.push(doc.data().subjectName)); 
+      const subjectsList = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        console.log(`Subject: ${data.subjectName}, Stream: ${data.stream}`); // Log subject and stream
+        return {
+          subjectName: data.subjectName,
+          stream: data.stream,
+        };
+      });
       setSubjects(subjectsList);
     } catch (error) {
       console.error('Error fetching subjects: ', error);
@@ -28,6 +35,7 @@ const AddLessons = () => {
     initialValues: {
       grade: '',
       subject: '',
+      stream: '', // Stream value selected with subject
       lessonName: '',
     },
     validationSchema: Yup.object({
@@ -42,26 +50,24 @@ const AddLessons = () => {
         let existingLessonList = docSnap.exists() ? docSnap.data().lessonList || [] : [];
         let subjectImageUrl = docSnap.exists() ? docSnap.data().subjectImage : '';
 
-        // Check if it's the first lesson for this subject
+        if (!docSnap.exists() && !subjectImageFile) {
+          toast.error('Subject image is required for the first lesson.');
+          return;
+        }
+
         if (!docSnap.exists()) {
-          if (!subjectImageFile) {
-            toast.error('Subject image is required for the first lesson.');
-            return;
-          }
-          
-          // Upload the subject image
           const subjectImageRef = ref(storage, `subjects/${subjectImageFile.name}`);
           const snapshot = await uploadBytes(subjectImageRef, subjectImageFile);
           subjectImageUrl = await getDownloadURL(snapshot.ref);
         }
 
-        // Add the new lesson to the existing lesson list
         existingLessonList.push(values.lessonName);
 
         await setDoc(docRef, {
           lessonList: existingLessonList,
           subjectName: values.subject,
-          subjectImage: subjectImageUrl, 
+          subjectImage: subjectImageUrl,
+          stream: values.stream, 
         }, { merge: true });
 
         toast.success('Lesson added successfully!');
@@ -108,7 +114,13 @@ const AddLessons = () => {
             <select
               id="subject"
               name="subject"
-              onChange={formik.handleChange}
+              onChange={(e) => {
+                const selectedSubject = subjects.find(
+                  (subject) => subject.subjectName === e.target.value
+                );
+                formik.setFieldValue('subject', selectedSubject?.subjectName || '');
+                formik.setFieldValue('stream', selectedSubject?.stream || ''); 
+              }}
               onBlur={formik.handleBlur}
               value={formik.values.subject}
               className="mt-1 p-2 block w-full border border-gray-300 rounded"
@@ -116,12 +128,17 @@ const AddLessons = () => {
             >
               <option value="">Select Subject</option>
               {subjects.map((subject) => (
-                <option key={subject} value={subject}>{subject}</option>
+                <option key={subject.subjectName} value={subject.subjectName}>
+                  {subject.subjectName}
+                </option>
               ))}
             </select>
             {formik.touched.subject && formik.errors.subject ? (
               <div className="text-red-600 text-sm">{formik.errors.subject}</div>
             ) : null}
+            {formik.values.stream && (
+              <p className="text-sm text-gray-600 mt-1">Selected Stream: {formik.values.stream}</p>
+            )}
           </div>
           <div>
             <label htmlFor="subjectImage" className="block text-sm font-medium">Subject Image</label>

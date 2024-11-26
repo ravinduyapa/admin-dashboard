@@ -69,11 +69,11 @@ const AddSubjects = () => {
 
   const grades = Array.from({ length: 13 }, (_, i) => `Grade ${i + 1}`);
   const streams = [
-    'Physical Science stream',
-    'Bio Science stream',
-    'Commerce stream',
-    'Arts stream',
-    'Technology stream',
+    'Physical Science',
+    'Bio Science',
+    'Commerce',
+    'Arts',
+    'Technology',
   ];
 
   const handleGradeChange = (e) => {
@@ -84,7 +84,7 @@ const AddSubjects = () => {
       setIsAdvancedGrade(true);
     } else {
       setIsAdvancedGrade(false);
-      formik.setFieldValue('stream', ''); // Clear the stream value for non-advanced grades
+      formik.setFieldValue('stream', ''); 
     }
   };
 
