@@ -1,49 +1,65 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useFormik } from 'formik';
-import * as Yup from 'yup';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { NavLink } from 'react-router-dom';
 import Sidebar from '../../components/Sidebar';
-import { collection, doc, setDoc, query, where, getDocs } from 'firebase/firestore'; 
+import { collection, doc, setDoc, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../auth/Firebase';
 
 const AddSubjects = () => {
+  const [isAdvancedGrade, setIsAdvancedGrade] = useState(false);
+
   const formik = useFormik({
     initialValues: {
       grade: '',
+      stream: '',
       subject: '',
     },
-    validationSchema: Yup.object({
-      grade: Yup.string().required('Grade is required'),
-      subject: Yup.string().required('Subject is required'),
-    }),
+    validate: (values) => {
+      const errors = {};
+      if (!values.grade) {
+        errors.grade = 'Grade is required';
+      }
+      if (isAdvancedGrade && !values.stream) {
+        errors.stream = 'Stream is required for Grade 12 and 13';
+      }
+      if (!values.subject) {
+        errors.subject = 'Subject is required';
+      }
+      return errors;
+    },
     onSubmit: async (values, { resetForm }) => {
       try {
-        // Format the subject to capitalize only the first letter
-        const formattedSubject = values.subject.charAt(0).toUpperCase() + values.subject.slice(1).toLowerCase();
+        const formattedSubject =
+          values.subject.charAt(0).toUpperCase() + values.subject.slice(1).toLowerCase();
 
-        // Reference the centralized "subjects" collection
         const subjectsCollectionRef = collection(db, 'subjects');
-
-        // Query Firestore to check if this subject already exists (case-insensitive) for this grade
-        const q = query(subjectsCollectionRef, where('subjectName', '==', formattedSubject), where('grade', '==', values.grade));
+        const q = query(
+          subjectsCollectionRef,
+          where('subjectName', '==', formattedSubject),
+          where('grade', '==', values.grade)
+        );
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {
-          toast.error(`The subject "${formattedSubject}" already exists for Grade ${values.grade}!`);
+          toast.error(`The subject "${formattedSubject}" already exists for ${values.grade}!`);
           return;
         }
 
-        // Create or update the document with subjectName and grade
-        const docRef = doc(subjectsCollectionRef, formattedSubject + '-' + values.grade); 
+        const docRef = doc(
+          subjectsCollectionRef,
+          formattedSubject + '-' + values.grade + (values.stream ? `-${values.stream}` : '')
+        );
         await setDoc(docRef, {
           subjectName: formattedSubject,
           grade: values.grade,
+          stream: values.stream || null,
         });
 
         toast.success('Subject added successfully!');
         resetForm();
+        setIsAdvancedGrade(false);
       } catch (error) {
         console.error('Error adding subject: ', error);
         toast.error('Failed to add subject. Please try again.');
@@ -52,12 +68,30 @@ const AddSubjects = () => {
   });
 
   const grades = Array.from({ length: 13 }, (_, i) => `Grade ${i + 1}`);
+  const streams = [
+    'Physical Science stream',
+    'Bio Science stream',
+    'Commerce stream',
+    'Arts stream',
+    'Technology stream',
+  ];
+
+  const handleGradeChange = (e) => {
+    const selectedGrade = e.target.value;
+    formik.setFieldValue('grade', selectedGrade);
+
+    if (selectedGrade === 'Grade 12' || selectedGrade === 'Grade 13') {
+      setIsAdvancedGrade(true);
+    } else {
+      setIsAdvancedGrade(false);
+      formik.setFieldValue('stream', ''); // Clear the stream value for non-advanced grades
+    }
+  };
 
   return (
     <section className="w-full flex h-screen">
       <Sidebar />
       <section className="flex-1 p-10">
-        {/* Button to navigate to Subject List */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-4xl font-semibold">Add Subject</h2>
           <NavLink to="/subject-list">
@@ -66,32 +100,62 @@ const AddSubjects = () => {
             </button>
           </NavLink>
         </div>
-        
+
         <form onSubmit={formik.handleSubmit} className="space-y-4">
-          {/* Select Grade */}
           <div>
-            <label htmlFor="grade" className="block text-sm font-medium">Grade</label>
+            <label htmlFor="grade" className="block text-sm font-medium">
+              Grade
+            </label>
             <select
               id="grade"
               name="grade"
-              onChange={formik.handleChange}
+              onChange={handleGradeChange}
               onBlur={formik.handleBlur}
               value={formik.values.grade}
               className="mt-1 p-2 block w-full border border-gray-300 rounded"
             >
               <option value="">Select Grade</option>
               {grades.map((grade) => (
-                <option key={grade} value={grade}>{grade}</option>
+                <option key={grade} value={grade}>
+                  {grade}
+                </option>
               ))}
             </select>
-            {formik.touched.grade && formik.errors.grade ? (
+            {formik.errors.grade && formik.touched.grade && (
               <div className="text-red-600 text-sm">{formik.errors.grade}</div>
-            ) : null}
+            )}
           </div>
 
-          {/* Subject Input */}
+          {isAdvancedGrade && (
+            <div>
+              <label htmlFor="stream" className="block text-sm font-medium">
+                Stream
+              </label>
+              <select
+                id="stream"
+                name="stream"
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                value={formik.values.stream}
+                className="mt-1 p-2 block w-full border border-gray-300 rounded"
+              >
+                <option value="">Select Stream</option>
+                {streams.map((stream) => (
+                  <option key={stream} value={stream}>
+                    {stream}
+                  </option>
+                ))}
+              </select>
+              {formik.errors.stream && formik.touched.stream && (
+                <div className="text-red-600 text-sm">{formik.errors.stream}</div>
+              )}
+            </div>
+          )}
+
           <div>
-            <label htmlFor="subject" className="block text-sm font-medium">Subject</label>
+            <label htmlFor="subject" className="block text-sm font-medium">
+              Subject
+            </label>
             <input
               id="subject"
               name="subject"
@@ -101,12 +165,11 @@ const AddSubjects = () => {
               value={formik.values.subject}
               className="mt-1 p-2 block w-full border border-gray-300 rounded"
             />
-            {formik.touched.subject && formik.errors.subject ? (
+            {formik.errors.subject && formik.touched.subject && (
               <div className="text-red-600 text-sm">{formik.errors.subject}</div>
-            ) : null}
+            )}
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
