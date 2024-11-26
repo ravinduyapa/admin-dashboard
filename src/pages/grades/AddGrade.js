@@ -19,8 +19,8 @@ const AddGrade = () => {
     if (!grade) {
       newErrors.grade = 'Grade is required';
     }
-    if (grade === '12' && !stream) {
-      newErrors.stream = 'Stream is required when Grade 12 is selected';
+    if ((grade === '12' || grade === '13') && !stream) {
+      newErrors.stream = 'Stream is required when Grade 12 or Grade 13 is selected';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -65,7 +65,7 @@ const AddGrade = () => {
         });
 
         await setDoc(docRef, {
-          streams: grade === '12' ? [stream] : [],
+          streams: (grade === '12' || grade === '13') ? [stream] : [],
         });
 
         toast.success('Grade added successfully!');
@@ -99,30 +99,35 @@ const AddGrade = () => {
               value={grade}
               onChange={(e) => {
                 setGrade(e.target.value);
-                if (e.target.value !== '12') {
+                if (e.target.value !== '12' && e.target.value !== '13') {
                   setStream('');
                 }
               }}
               className="mt-1 p-2 block w-full border border-gray-300 rounded"
             >
               <option value="">Select Grade</option>
-              {Array.from({ length: 11 }, (_, i) => (i + 1)).map((g) => (
+              {Array.from({ length: 13 }, (_, i) => (i + 1)).map((g) => (
                 <option key={g} value={g}>Grade {g}</option>
               ))}
-              <option value="12">Grade 12</option>
             </select>
             {errors.grade && <div className="text-red-600 text-sm">{errors.grade}</div>}
           </div>
-          {grade === '12' && (
+          {(grade === '12' || grade === '13') && (
             <div>
               <label htmlFor="stream" className="block text-sm font-medium">Stream</label>
-              <input
+              <select
                 id="stream"
-                type="text"
                 value={stream}
                 onChange={(e) => setStream(e.target.value)}
                 className="mt-1 p-2 block w-full border border-gray-300 rounded"
-              />
+              >
+                <option value="">Select Stream</option>
+                <option value="Physical Science">Physical Science</option>
+                <option value="Bio Science">Bio Science</option>
+                <option value="Commerce">Commerce</option>
+                <option value="Arts">Arts</option>
+                <option value="Technology">Technology</option>
+              </select>
               {errors.stream && <div className="text-red-600 text-sm">{errors.stream}</div>}
             </div>
           )}
