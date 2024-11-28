@@ -7,6 +7,7 @@ import Sidebar from '../../components/Sidebar';
 import { collection, doc, getDoc, setDoc, query, where, getDocs } from 'firebase/firestore';
 import { db, storage } from '../../auth/Firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import {  NavLink } from 'react-router-dom';
 
 const AddLessons = () => {
   const [subjectImageFile, setSubjectImageFile] = useState(null);
@@ -104,7 +105,16 @@ const AddLessons = () => {
     <section className="w-full flex h-screen">
       <Sidebar />
       <section className="flex-1 p-10">
-        <h2 className="text-4xl font-semibold mb-6">Add Lesson Name</h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-4xl font-semibold">Add Lesson Name</h2>
+          <NavLink to="/lessons-list">
+          <button
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+          >
+            Lesson List
+          </button>
+          </NavLink>
+        </div>
         <form onSubmit={formik.handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="grade" className="block text-sm font-medium">Grade</label>

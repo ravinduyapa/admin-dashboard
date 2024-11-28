@@ -4,6 +4,7 @@ import { db } from '../../auth/Firebase';
 import Sidebar from '../../components/Sidebar';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; 
 import { storage } from '../../auth/Firebase'; 
+import { NavLink } from 'react-router-dom';
 
 // Modal Component for Delete Confirmation
 const Modal = ({ isOpen, onClose, onConfirm, lessonName }) => {
@@ -103,6 +104,7 @@ const EditSubjectModal = ({ isOpen, onClose, subjectName, onSubjectNameChange, o
 
 // LessonList Component
 const LessonList = () => {
+  const [grades, setGrades] = useState([]);
   const [grade, setGrade] = useState('');
   const [subject, setSubject] = useState('');
   const [lessons, setLessons] = useState([]); 
@@ -117,7 +119,23 @@ const LessonList = () => {
   const [isEditSubjectModalOpen, setIsEditSubjectModalOpen] = useState(false);
   const [newSubjectName, setNewSubjectName] = useState('');
 
-  const grades = Array.from({ length: 13 }, (_, i) => `Grade ${i + 1}`);
+
+  // Fetch Grades from Firestore
+  const fetchGrades = async () => {
+    try {
+      const gradesRef = collection(db, 'Grades');
+      const gradeDocs = await getDocs(gradesRef);
+      const fetchedGrades = gradeDocs.docs.map(doc => doc.id);
+      setGrades(fetchedGrades);
+    } catch (error) {
+      console.error('Error fetching grades: ', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchGrades();
+  }, []);
+
 
   const fetchSubjects = async (grade) => {
     const subjectsRef = collection(db, grade);
@@ -157,19 +175,12 @@ const LessonList = () => {
     setIsEditModalOpen(true);
   };
 
-  const handleEditSubject = () => {
-    setNewSubjectName(subject);
-    setIsEditSubjectModalOpen(true);
-  };
 
   const handleDelete = (lesson) => {
     setLessonToDelete(lesson); 
     setIsModalOpen(true); 
   };
 
-  const handleDeleteSubject = () => {
-    setIsModalOpen(true); 
-  };
 
   const confirmDeleteLesson = async () => {
     if (!lessonToDelete) return;
@@ -273,7 +284,16 @@ const LessonList = () => {
     <section className="w-full flex h-screen">
       <Sidebar />
       <section className="flex-1 p-10">
-        <h2 className="text-4xl font-semibold mb-6">Lesson List</h2>
+      <div className="flex justify-between items-center mb-6">
+          <h2 className="text-4xl font-semibold">Add Lesson Name</h2>
+          <NavLink to="/add-lessons">
+          <button
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+          >
+            Add Lesson 
+          </button>
+          </NavLink>
+        </div>
 
         {/* Select Grade */}
         <div>
@@ -327,15 +347,7 @@ const LessonList = () => {
               </li>
             ))}
           </ul>
-        </div>
-
-        {/* Delete Subject Button */}
-        {grade && subject && (
-          <div className="mt-4">
-            <button onClick={handleEditSubject} className="bg-blue-500 text-white px-4 py-2 rounded">Edit Subject</button>
-            <button onClick={handleDeleteSubject} className="bg-red-500 text-white px-4 py-2 rounded ml-2">Delete Subject</button>
-          </div>
-        )}
+        </div> 
 
         {/* Delete Confirmation Modal */}
         <Modal

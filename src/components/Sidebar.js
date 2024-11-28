@@ -7,7 +7,6 @@ import { IoMdPersonAdd } from "react-icons/io";
 import { FaListUl } from "react-icons/fa";
 import { PiStudentBold } from "react-icons/pi";
 import { PiUserListLight } from "react-icons/pi";
-import { MdEditNote } from "react-icons/md"
 import { MdNoteAdd } from "react-icons/md";
 import { MdSubject } from "react-icons/md";
 import { MdOutlineAddBox } from "react-icons/md";
@@ -31,7 +30,6 @@ function Sidebar() {
     { name: "Add Student", icon: PiStudentBold, path: "/add-students" },
     { name: "Students List", icon: PiUserListLight, path: "/students-list" },
     { name: "Add Lessons", icon: MdNoteAdd, path: "/add-lessons" },
-    { name: "Lessons List", icon: MdEditNote, path: "/lessons-list" },
     { name: "Add Subject", icon: MdSubject, path: "/add-subjects" },
     { name: "Add Grade", icon: MdOutlineAddBox, path: "/add-grade" },
   ];
@@ -70,7 +68,7 @@ function Sidebar() {
     >
       <div className="flex flex-col justify-center items-center gap-4"> 
         {isExpanded ? (
-          <div id="logo-box">
+          <div id="logo-box mb-4">
             <Link to="/dashboard">
               <h1 className="text-red-600 font-bold text-3xl"> 
                 ඉස්කෝල <span className="italic text-yellow-500">ඇප්</span>

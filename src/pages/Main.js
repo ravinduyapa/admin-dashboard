@@ -32,7 +32,7 @@ const Main = () => {
   // Fetching Grade 1 lessons from Firestore
   const fetchLessons = useCallback(async () => {
     try {
-      const grade1Ref = collection(db, 'Grade 1');
+      const grade1Ref = collection(db, '6 වසර');
       const querySnapshot = await getDocs(grade1Ref);
       const lessonsData = querySnapshot.docs.map((doc) => ({
         id: doc.id,
@@ -84,7 +84,7 @@ const Main = () => {
 
         {/* Lessons Grid with Navigation */}
         <Link to="/lessons-list" className="flex-1 bg-yellow-100 rounded-lg p-4 overflow-y-auto max-h-64 w-full">
-          <h2 className="text-3xl font-bold mb-2 text-yellow-700">Grade 1 Lessons List</h2>
+          <h2 className="text-3xl font-bold mb-2 text-yellow-700">6 වසර Lessons List</h2>
           {lessons.length > 0 ? (
             lessons.slice(0, 5).map((lesson) => (
               <div key={lesson.id} className="border-b py-2">
