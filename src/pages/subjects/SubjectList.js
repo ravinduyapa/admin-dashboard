@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 
 const SubjectList = () => {
   const [subjects, setSubjects] = useState([]);
+  const [grades, setGrades] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [filterGrade, setFilterGrade] = useState(''); 
   const [deleteSubjectId, setDeleteSubjectId] = useState(null);
@@ -50,8 +51,21 @@ const SubjectList = () => {
     }
   };
 
-  // Generate grades 1 to 13
-  const grades = Array.from({ length: 13 }, (_, i) => `Grade ${i + 1}`);
+   // Fetch grades from Firestore
+   const fetchGrades = async () => {
+    try {
+      const gradesRef = collection(db, 'Grades');
+      const gradeDocs = await getDocs(gradesRef);
+      const fetchedGrades = gradeDocs.docs.map(doc => doc.id);
+      setGrades(fetchedGrades);
+    } catch (error) {
+      console.error('Error fetching grades: ', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchGrades();
+  }, []);
 
   // Pagination logic
   const indexOfLastSubject = currentPage * itemsPerPage;
@@ -86,13 +100,15 @@ const SubjectList = () => {
             value={filterGrade}
             onChange={(e) => {
               setFilterGrade(e.target.value);
-              setCurrentPage(1); 
+              setCurrentPage(1);
             }}
             className="border p-2 rounded bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">All Grades</option>
-            {grades.map((grade) => (
-              <option key={grade} value={grade}>{grade}</option>
+            {grades.map((grade, index) => (
+              <option key={index} value={grade}>
+                {grade}
+              </option>
             ))}
           </select>
         </div>
