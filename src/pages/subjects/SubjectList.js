@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../auth/Firebase';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -10,8 +10,10 @@ const SubjectList = () => {
   const [subjects, setSubjects] = useState([]);
   const [grades, setGrades] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [filterGrade, setFilterGrade] = useState(''); 
+  const [filterGrade, setFilterGrade] = useState('');
   const [deleteSubjectId, setDeleteSubjectId] = useState(null);
+  const [editSubjectId, setEditSubjectId] = useState(null);
+  const [newSubjectName, setNewSubjectName] = useState('');
   const itemsPerPage = 8;
 
   const navigate = useNavigate();
@@ -51,8 +53,8 @@ const SubjectList = () => {
     }
   };
 
-   // Fetch grades from Firestore
-   const fetchGrades = async () => {
+  // Fetch grades from Firestore
+  const fetchGrades = async () => {
     try {
       const gradesRef = collection(db, 'Grades');
       const gradeDocs = await getDocs(gradesRef);
@@ -79,6 +81,31 @@ const SubjectList = () => {
   // Current subjects for the current page
   const currentSubjects = filteredSubjects.slice(indexOfFirstSubject, indexOfLastSubject);
   const totalPages = Math.ceil(filteredSubjects.length / itemsPerPage);
+
+  // Handle subject name edit
+  const handleEdit = async () => {
+    if (editSubjectId && newSubjectName) {
+      try {
+        const docRef = doc(db, 'subjects', editSubjectId);
+        await updateDoc(docRef, { subjectName: newSubjectName });
+        setSubjects(subjects.map(subject => 
+          subject.id === editSubjectId ? { ...subject, subjectName: newSubjectName } : subject
+        ));
+        toast.success('Subject updated successfully!');
+        setEditSubjectId(null);
+        setNewSubjectName('');
+      } catch (error) {
+        console.error('Error updating subject: ', error);
+        toast.error('Failed to update subject.');
+      }
+    }
+  };
+
+  // Handle opening edit modal and setting the current subject name
+  const openEditModal = (subject) => {
+    setEditSubjectId(subject.id);
+    setNewSubjectName(subject.subjectName); 
+  };
 
   return (
     <section className="flex w-full h-screen">
@@ -128,6 +155,12 @@ const SubjectList = () => {
                 <td className="border p-2 text-center">{subject.subjectName}</td>
                 <td className="border p-2 text-center">
                   <button 
+                    onClick={() => openEditModal(subject)} 
+                    className="bg-green-500 text-white px-2 py-1 rounded mr-2"
+                  >
+                    Edit
+                  </button>
+                  <button 
                     onClick={() => setDeleteSubjectId(subject.id)} 
                     className="bg-red-500 text-white px-2 py-1 rounded"
                   >
@@ -159,6 +192,26 @@ const SubjectList = () => {
             Next
           </button>
         </div>
+
+        {/* Edit Subject Modal */}
+        {editSubjectId && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white p-6 rounded shadow-md">
+              <h3 className="text-lg font-semibold mb-4">Edit Subject Name</h3>
+              <input
+                type="text"
+                value={newSubjectName}
+                onChange={(e) => setNewSubjectName(e.target.value)}
+                className="border p-2 rounded w-full"
+                placeholder="Enter new subject name"
+              />
+              <div className="flex justify-end mt-4">
+                <button onClick={() => setEditSubjectId(null)} className="bg-gray-500 text-white px-4 py-2 rounded mr-2">Cancel</button>
+                <button onClick={handleEdit} className="bg-blue-500 text-white px-4 py-2 rounded">Save</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Delete Confirmation Modal */}
         {deleteSubjectId && (
